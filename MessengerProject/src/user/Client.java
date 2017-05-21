@@ -1,24 +1,27 @@
 package user;
 
+import security.KeyConverter;
 import socketio.Socket;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Arrays;
 
-import secruity.KeyConverter;
-
-public class Client {
+public class Client implements Runnable{
 
 	private Socket socket;
-	private PublicKey userPublicKey;
-	private PrivateKey serverPrivateKey;
 	private PublicKey serverPublicKey;
+	private PrivateKey userPrivateKey;
+	private PublicKey userPublicKey;
+	private String lastOnlineDate;
 
 
-	public Client(String host, int port) {
+	public Client(String host, int port,String lastOnlineDate) {
 		socket = new Socket(host, port);
+		this.lastOnlineDate = lastOnlineDate;
 	}
 
 	public boolean connect() {
@@ -36,7 +39,8 @@ public class Client {
 		// TODO Generate public and private Key
 		write("KEY", userPublicKey.toString());
 		try {
-			serverPublicKey = KeyConverter.generatePublicKey(socket.readLine());
+
+			serverPublicKey = KeyConverter.generatePublicKey(getMessage(socket.readLine()));
 		} catch (IOException e) {
 			System.err.println("Could not read the Key from the server");
 			return 0;
@@ -47,30 +51,36 @@ public class Client {
 
 		response = read();
 
-		if (response.contains("OK")) {
+		if (getHeader(response).equals("OK")) {
 			return Integer.parseInt(getMessage(response));
 		}
 		return 0;
 	}
 
-	public boolean login(String username, int tag, String password) {
+	public boolean login(String username, int tag, String password) throws IOException {
 		if(!connect()) {
 			System.err.println("Could not connect!");
 			return false;
 		}
 		// TODO Generate public and private Key
-		write("KEY", userPublicKey.toString());
+        socket.write("KEY" + "[/]" + userPublicKey.toString());
 		try {
-			serverPublicKey = KeyConverter.generatePublicKey(socket.readLine());
+			serverPublicKey = KeyConverter.generatePublicKey(getMessage(socket.readLine()));
 		} catch (IOException e) {
 			System.err.println("Could not read the Key from the server");
 			return false;
 		}
 
+		// TODO HASH PASSWORD
 		write("LOG", tag + "," + password);
 		String response = read();
-		if (getHeader(response).equals("OK")) {
-
+		if (getHeader(response).equals("YES")) {
+			write("LOD", lastOnlineDate);
+			Thread t = new Thread(this);
+			t.start();
+			return true;
+		}else {
+			socket.close();
 		}
 		return false;
 	}
@@ -79,13 +89,44 @@ public class Client {
 		write("MSG"+ tag,message);
 	}
 
+	public boolean sendData(int tag,String filename,FileInputStream stream, boolean directConnection) throws IOException {
+		if (stream.available() <= 1048576 || directConnection) {
+			write("DATA",tag+","+filename+","+stream.available());
+            if (getHeader(read()).equals("OK")) {
+                byte[] bytes = new byte[1024];
+                int counter = 0;
+                while (stream.available() > 0) {
+                    stream.read(bytes);
+                    while (!send(bytes,counter));
+                }
+                return true;
+            }
+		}
+		return false;
+	}
+
 	public void write(String header, String message) {
-		//todo: Decryption
+		//todo: Encryption
 		try {
 			socket.write(header+"[/]"+message+"\n");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public boolean send(byte[] bytes,int blockNr) throws IOException {
+        //todo: Encryption
+		byte checksum = 0;
+		for (byte b:bytes
+			 ) {
+			checksum ^= b;
+		}
+		write("Block",blockNr+","+checksum);
+		socket.getOutputStream().write(bytes);
+		if (getHeader(read()).equals("OK"))
+			return true;
+		else
+			return false;
 	}
 
 	private String getHeader(String message) {
@@ -97,7 +138,7 @@ public class Client {
 	}
 
 	private String read() {
-		//todo: Entcryption
+		//todo: Decryption
 		try {
 			return socket.readLine();
 		} catch (IOException e) {
@@ -106,10 +147,19 @@ public class Client {
 		return null;
 	}
 
-	public void writeData(int tag, File file) {
-		// TODO Auto-generated method stub
-
+	public static void main(String[] args) throws IOException {
+		File file = new File("C:\\Users\\orbit\\OneDrive\\Bilder\\Eigene Aufnahmen\\Background.png");
+		FileInputStream fileInputStream = new FileInputStream(file);
+		byte[] bytes = new byte[1024];
+		while (fileInputStream.available() > 0) {
+			System.out.println(fileInputStream.read(bytes));
+			System.out.println(Arrays.toString(bytes));
+		}
+		System.out.println();
 	}
 
+	@Override
+	public void run() {
 
+	}
 }
