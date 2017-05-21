@@ -1,5 +1,5 @@
 # Messenger
-A small messenger for a small school project written in Java.
+A small messenger for a small school project written in Java 8.
 
 The following features are planned:
 * Creation of Accounts which can be used to login on an Android phone or a computer
