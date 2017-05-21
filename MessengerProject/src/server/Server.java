@@ -5,6 +5,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 
+import dataManagement.DataManagement;
 import secruity.KeyConverter;
 import socketio.ServerSocket;
 import socketio.Socket;
@@ -16,7 +17,7 @@ public class Server {
 	private ArrayList<Group> groups;
 	private Thread acceptingThread;
 	private ServerSocket server;
-	private DataMangement dataMangement;
+	private DataManagement dataMangement;
 	private boolean isRunning = false;
 
 	public Server() {

@@ -23,7 +23,7 @@ public class User {
 		client.writeData(tag, file);
 	}
 
-	public boolean löschenGroup(Group Group) {
+	public boolean deleteGroup(Group Group) {
 		if (Groupn.contains(Group)) {
 			return Groupn.remove(Group);
 		}
@@ -31,7 +31,7 @@ public class User {
 		return false;
 	}
 
-	public boolean GroupUmbenennen(Group Group, String neuerName) {
+	public boolean renameGroup(Group Group, String neuerName) {
 		if (!(Group == null || neuerName == null)) {
 			for (Group eineGroup : Groupn) {
 				if (eineGroup.getGroupnName().equals(Group.getGroupnName())) {
