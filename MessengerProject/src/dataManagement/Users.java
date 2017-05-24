@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.text.SimpleDateFormat;
 
 public class Users {
 
@@ -12,7 +13,7 @@ public class Users {
 	final long BYTES_PER_USER = 100; // TODO Find a value
 	final char FILLER = ',', SEPERATOR = '.';
 
-	public Users(File sysLine) {
+	Users(File sysLine) {
 		users = new File(sysLine.getAbsolutePath() + "/users.txt");
 		boolean makeHeader = !users.exists();
 		try {
@@ -25,8 +26,9 @@ public class Users {
 		if (makeHeader) {
 			Logger.getInstance().log("Users File does not exists. Making one!");
 			try {
+				for(byte b = 0; b < BYTES_PER_USER; b++)
 				raf.writeBytes(
-						"THIS_IS_THE_USERNAME_AND_PASSWORD_SAVE_FILE_NOEDITTHIS_IS_THE_USERNAME_AND_PASSWORD_SAVE_FILE_NOEDIT");
+						"#");
 			} catch (IOException e) {
 				System.err.println("Error U4: Could not init the RandomAccessFile! #BlameBene");
 				Logger.getInstance().log("Error U4: Could not init the RandomAccessFile! #BlameBene");
@@ -72,6 +74,12 @@ public class Users {
 			e.printStackTrace();
 		}
 		return sb.toString().equalsIgnoreCase(password);
+	}
+
+
+	boolean login(String username, String password) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 	int register(String username, String password) {
@@ -145,5 +153,6 @@ public class Users {
 	private long getSize() {
 		return users.length();
 	}
+
 
 }

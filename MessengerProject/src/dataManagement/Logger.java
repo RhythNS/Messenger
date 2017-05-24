@@ -10,7 +10,6 @@ public class Logger {
 
 	private static Logger instance;
 	private RandomAccessFile logWriter;
-	private SimpleDateFormat dateFormat;
 
 	public static Logger getInstance() {
 		if (instance == null)
@@ -18,11 +17,18 @@ public class Logger {
 		return instance;
 	}
 
+	/**
+	 * This needs to be called for the Logger to initlize. The file should be
+	 * the root folder of the Messenger file system.
+	 */
 	public void setFile(File f) {
-		dateFormat = new SimpleDateFormat("dd-MM-YYYY_HH.mm.ss");
+		if (f == null) {
+			System.err.println("File in Logger is null! #BlameBene");
+			return;
+		}
 		try {
-			logWriter = new RandomAccessFile(
-					new File(f.getAbsolutePath() + "/" + dateFormat.format(new Date()) + ".txt"), "rw");
+			logWriter = new RandomAccessFile(new File(f.getAbsolutePath() + "/" + DateCalc.getLoggerDate() + ".txt"),
+					"rw");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -37,9 +43,8 @@ public class Logger {
 	 */
 	public synchronized void log(String toLog) {
 		if (logWriter != null) {
-			System.out.println("logging");
 			try {
-				logWriter.writeBytes(dateFormat.format(new Date()) + ": " + toLog + System.lineSeparator());
+				logWriter.writeBytes(DateCalc.getLoggerDate() + ": " + toLog + System.lineSeparator());
 			} catch (IOException e) {
 				System.err.println("Could not log! #BlameBene");
 				e.printStackTrace();
