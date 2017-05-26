@@ -1,6 +1,9 @@
 package user;
 
 import java.io.File;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 public class User {
@@ -23,7 +26,7 @@ public class User {
 		client.writeData(tag, file);
 	}
 
-	public boolean deleteGroup(Group Group) {
+	public boolean löschenGroup(Group Group) {
 		if (Groupn.contains(Group)) {
 			return Groupn.remove(Group);
 		}
@@ -31,7 +34,7 @@ public class User {
 		return false;
 	}
 
-	public boolean renameGroup(Group Group, String neuerName) {
+	public boolean GroupUmbenennen(Group Group, String neuerName) {
 		if (!(Group == null || neuerName == null)) {
 			for (Group eineGroup : Groupn) {
 				if (eineGroup.getGroupnName().equals(Group.getGroupnName())) {
@@ -50,4 +53,22 @@ public class User {
 	public ArrayList<Contact> getContacts() {
 		return contacts;
 	}
+	public static void getMD5Hash() throws NoSuchAlgorithmException{
+		String password= "test";
+		MessageDigest m= MessageDigest.getInstance("MD5");
+		m.reset();
+		m.update(password.getBytes());
+		byte[] digest= m.digest();
+		BigInteger bigInt= new BigInteger(1,digest);
+		String hashtext= bigInt.toString(16);	
+		while(hashtext.length()<32){
+			hashtext="0"+hashtext;
+		}
+		System.out.println(hashtext);
+	}
+	public static void main(String[] args) throws NoSuchAlgorithmException {
+		getMD5Hash();
+		
+	}
+	
 }
