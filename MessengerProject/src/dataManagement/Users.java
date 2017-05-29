@@ -4,44 +4,43 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.text.SimpleDateFormat;
 
 public class Users {
 
+	// TODO MIGHT WANT TO REWRITE SINCE A SEPERATOR IS NOT A GOOD IDEA
+
 	private File users;
 	private RandomAccessFile raf;
-	final long BYTES_PER_USER = 100; // TODO Find a value
-	final char FILLER = ',', SEPERATOR = '.';
+	private BinaryTreeFile binaryTreeFile;
+	final long BYTES_PER_USER = 100;
+	final char FILLER = '#', SEPERATOR = ',';
 
 	Users(File sysLine) {
-		users = new File(sysLine.getAbsolutePath() + "/users.txt");
+		users = new File(sysLine, "users.txt");
 		boolean makeHeader = !users.exists();
 		try {
 			raf = new RandomAccessFile(users, "rw");
 		} catch (FileNotFoundException e) {
-			System.err.println("Error U3: Could not init the RandomAccessFile! #BlameBene");
 			Logger.getInstance().log("Error U3: Could not init the RandomAccessFile! #BlameBene");
 			new FileException(users);
 		}
 		if (makeHeader) {
-			Logger.getInstance().log("Users File does not exists. Making one!");
+			Logger.getInstance().log("Notice U0: Users File does not exists. Making one!");
 			try {
-				for(byte b = 0; b < BYTES_PER_USER; b++)
-				raf.writeBytes(
-						"#");
+				for (byte b = 0; b < BYTES_PER_USER; b++)
+					raf.writeBytes("#");
 			} catch (IOException e) {
-				System.err.println("Error U4: Could not init the RandomAccessFile! #BlameBene");
 				Logger.getInstance().log("Error U4: Could not init the RandomAccessFile! #BlameBene");
 				e.printStackTrace();
 			}
 		}
+		binaryTreeFile = new BinaryTreeFile(sysLine);
 	}
 
 	boolean login(int tag, String password) {
 		try {
 			raf.seek(tag * BYTES_PER_USER);
 		} catch (IOException e) {
-			System.err.println("Error U6: Could not seek for login! #BlameBene");
 			Logger.getInstance().log("Error U6: Could not seek for login! #BlameBene");
 			e.printStackTrace();
 			return false;
@@ -50,7 +49,6 @@ public class Users {
 			while ((char) raf.read() != SEPERATOR)
 				;
 		} catch (IOException e) {
-			System.err.println("Error U7: Could not read for login! #BlameBene");
 			Logger.getInstance().log("Error U7: Could not read for login! #BlameBene");
 			e.printStackTrace();
 		}
@@ -59,7 +57,6 @@ public class Users {
 		try {
 			c = (char) raf.read();
 		} catch (IOException e) {
-			System.err.println("Error U7: Could not read for login! #BlameBene");
 			Logger.getInstance().log("Error U7: Could not read for login! #BlameBene");
 			e.printStackTrace();
 		}
@@ -69,27 +66,28 @@ public class Users {
 				c = (char) raf.read();
 			}
 		} catch (IOException e) {
-			System.err.println("Error U8: Could not read or getFilePointer for login! #BlameBene");
 			Logger.getInstance().log("Error U8: Could not read or getFilePointer for login! #BlameBene");
 			e.printStackTrace();
 		}
 		return sb.toString().equalsIgnoreCase(password);
 	}
 
-
-	boolean login(String username, String password) {
-		// TODO Auto-generated method stub
-		return false;
+	int login(String username, String password) {
+		int tag = binaryTreeFile.getTag(username);
+		if (tag > 0)
+			return (login(tag, password)) ? tag : -1;
+		Logger.getInstance().log("Error U10: Username not found! #BlameBene");
+		return -1;
 	}
 
 	int register(String username, String password) {
-		if (username.length() + password.length() > BYTES_PER_USER && isUsernameInUse(username))
+		if (username.length() + password.length() > BYTES_PER_USER || binaryTreeFile
+				.getTag(username) != -1/* isUsernameInUse(username) */)
 			return 0;
 		long size = getSize();
 		try {
 			raf.seek(size);
 		} catch (IOException e) {
-			System.err.println("Error U0: Could not seek! #BlameBene");
 			Logger.getInstance().log("Error U0: Could not seek! #BlameBene");
 			e.printStackTrace();
 			return 0;
@@ -104,55 +102,28 @@ public class Users {
 		try {
 			raf.writeBytes(sb.toString());
 		} catch (IOException e) {
-			System.err.println("Error U0: Could not write to Users! #BlameBene");
 			Logger.getInstance().log("Error U1: Could not write to Users! #BlameBene");
 			e.printStackTrace();
+			return 0;
+		}
+		int tag = (int) (size / BYTES_PER_USER);
+		if (!binaryTreeFile.addUser(tag, username)) {
+			try {
+				raf.setLength(size);
+			} catch (IOException e) {
+				Logger.getInstance().log(
+						"Error U9: Could not delete the User! This will lead to major problems down the road! #BlameBene");
+				e.printStackTrace();
+				return 0;
+			}
+			return 0;
 		}
 		Logger.getInstance().log(username + " has registerd!");
-		return (int) (size / BYTES_PER_USER);
-	}
-
-	private boolean isUsernameInUse(String username) {
-		if (getSize() <= BYTES_PER_USER)
-			return false;
-		for (long i = BYTES_PER_USER; i < getSize(); i += BYTES_PER_USER) {
-			try {
-				raf.seek(i);
-			} catch (IOException e1) {
-				System.err.println("Error U5: Could not seek for username! #BlameBene");
-				Logger.getInstance().log("Error U5: Could not seek from username! #BlameBene");
-				e1.printStackTrace();
-			}
-			StringBuilder sb = new StringBuilder();
-			char c = 's';
-			try {
-				c = (char) raf.read();
-			} catch (IOException e) {
-				System.err.println("Error U2: Could not read from User! #BlameBene");
-				Logger.getInstance().log("Error U2: Could not read from User! #BlameBene");
-				e.printStackTrace();
-				return true;
-			}
-			while (c != SEPERATOR) {
-				sb.append(c);
-				try {
-					c = (char) raf.read();
-				} catch (IOException e) {
-					System.err.println("Error U2: Could not read from User! #BlameBene");
-					Logger.getInstance().log("Error U2: Could not read from User! #BlameBene");
-					e.printStackTrace();
-					return true;
-				}
-			}
-			if (sb.toString().equalsIgnoreCase(username))
-				return true;
-		}
-		return false;
+		return tag;
 	}
 
 	private long getSize() {
 		return users.length();
 	}
-
 
 }

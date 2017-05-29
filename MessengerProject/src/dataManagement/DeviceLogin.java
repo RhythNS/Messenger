@@ -2,20 +2,12 @@ package dataManagement;
 
 public class DeviceLogin {
 
-	private String date;
-	private int number;
+	public final String DATE;
+	public final int NUMBER;
 
 	public DeviceLogin(String date, int number) {
-		this.date = date;
-		this.number = number;
-	}
-
-	public String getDate() {
-		return date;
-	}
-
-	public int getNumber() {
-		return number;
+		this.DATE = date;
+		this.NUMBER = number;
 	}
 
 }

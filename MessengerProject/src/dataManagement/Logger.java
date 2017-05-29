@@ -3,8 +3,6 @@ package dataManagement;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class Logger {
 
@@ -27,7 +25,7 @@ public class Logger {
 			return;
 		}
 		try {
-			logWriter = new RandomAccessFile(new File(f.getAbsolutePath() + "/" + DateCalc.getLoggerDate() + ".txt"),
+			logWriter = new RandomAccessFile(new File(f, DateCalc.getLoggerDate() + ".txt"),
 					"rw");
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -42,6 +40,7 @@ public class Logger {
 	 * Logs a String to the log file
 	 */
 	public synchronized void log(String toLog) {
+		System.out.println(toLog);
 		if (logWriter != null) {
 			try {
 				logWriter.writeBytes(DateCalc.getLoggerDate() + ": " + toLog + System.lineSeparator());

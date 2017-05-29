@@ -23,7 +23,7 @@ public class DateCalc {
 		return loggerDate.format(new Date());
 	}
 
-	public static String getDeviceDate(int days) {
+	public static synchronized String getDeviceDate(int days) {
 		Calendar cal = Calendar.getInstance();
 		cal.setTime(new Date());
 		cal.add(Calendar.DATE, days);
@@ -41,22 +41,20 @@ public class DateCalc {
 
 	public static int getLowestDateDevice(String string) { // 14
 		Date[] dates = new Date[50];
-		System.out.println(string.length());
 		for (int i = 0; i < dates.length; i++) {
 			try {
 				dates[i] = deviceDate.parse(string.substring(i * 14, (i + 1) * 14 - 1));
 			} catch (ParseException e) {
-				System.err.println("Error CD0: Could not parse the date! #BlameBene");
 				Logger.getInstance().log("Error CD0: Could not parse the date! #BlameBene");
 				e.printStackTrace();
 				return i;
 			}
 		}
 		int number = 0;
-		for (int i = 0; i < dates.length - 1; i++) {
+		for (int i = 0; i < dates.length - 1; i++)
 			if (dates[i].compareTo(dates[i + 1]) < 0)
 				number = i;
-		}
+
 		return number;
 	}
 
