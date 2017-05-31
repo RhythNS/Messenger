@@ -11,7 +11,7 @@ public class User {
 	private String name;
 	private String private_key;
 	private ArrayList<Contact> contacts;
-	private ArrayList<Group> Groupn;
+	private ArrayList<Group> Groups;
 	private Client client;
 
 	public User(String name) {
@@ -23,12 +23,12 @@ public class User {
 	}
 
 	public void sendData(File file, int tag) {
-		client.writeData(tag, file);
+		client.sendData(tag, file, stream, directConnection);
 	}
 
 	public boolean löschenGroup(Group Group) {
-		if (Groupn.contains(Group)) {
-			return Groupn.remove(Group);
+		if (Groups.contains(Group)) {
+			return Groups.remove(Group);
 		}
 		System.out.println("Group nicht vorhanden #BlameBenós");
 		return false;
@@ -36,16 +36,16 @@ public class User {
 
 	public boolean GroupUmbenennen(Group Group, String neuerName) {
 		if (!(Group == null || neuerName == null)) {
-			for (Group eineGroup : Groupn) {
+			for (Group eineGroup : Groups) {
 				if (eineGroup.getGroupnName().equals(Group.getGroupnName())) {
 					Group.setGroupnName(neuerName);
 					return true;
 				}
 			}
-			System.err.println("Die Group ist nicht in deiner Liste vorhanden");
+			System.err.println("Group doesn't exsist");
 			return false;
 		} else {
-			System.err.println("Geben Sie einen gültigen Groupn Namen ein");
+			System.err.println("Type in Groupname");
 		}
 		return false;
 	}
@@ -53,22 +53,4 @@ public class User {
 	public ArrayList<Contact> getContacts() {
 		return contacts;
 	}
-	public static void getMD5Hash() throws NoSuchAlgorithmException{
-		String password= "test";
-		MessageDigest m= MessageDigest.getInstance("MD5");
-		m.reset();
-		m.update(password.getBytes());
-		byte[] digest= m.digest();
-		BigInteger bigInt= new BigInteger(1,digest);
-		String hashtext= bigInt.toString(16);	
-		while(hashtext.length()<32){
-			hashtext="0"+hashtext;
-		}
-		System.out.println(hashtext);
-	}
-	public static void main(String[] args) throws NoSuchAlgorithmException {
-		getMD5Hash();
-		
-	}
-	
 }
