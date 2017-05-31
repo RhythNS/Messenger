@@ -5,36 +5,37 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import server.Constants;
+
 public class MessageIO {
 
 	private RandomAccessFile raf;
 	private final Object lock = new Object();
 	private String date;
 	private File dir;
-	private final char SEPERATOR = '-';
 
-	MessageIO(String date, File saveDir) {
+	MessageIO(String date, File messagesDir) {
 		this.date = date;
-		dir = new File(saveDir, date);
+		dir = new File(messagesDir, date);
 		dir.mkdirs();
-		File file = new File(dir, "raf.txt");
+		File randomAccessFile = new File(dir, "raf.txt");
 		try {
-			file.createNewFile();
+			randomAccessFile.createNewFile();
 		} catch (IOException e1) {
-			new FileException(file);
+			new FileException(randomAccessFile);
 			Logger.getInstance().log("Error MIO1: Could not create a new file! #BlameBene");
 			e1.printStackTrace();
 		}
 		try {
-			raf = new RandomAccessFile(file, "rw");
+			raf = new RandomAccessFile(randomAccessFile, "rw");
 		} catch (FileNotFoundException e) {
-			new FileException(file);
+			new FileException(randomAccessFile);
 			Logger.getInstance().log("Error MIO0: Could not init RandomAccessFile. #BlameBene");
 			e.printStackTrace();
 		}
-		if (file.length() > 0) {
+		if (randomAccessFile.length() > 0) {
 			Logger.getInstance()
-					.log("Notice MIO0: File " + file.getName() + " already has data in it. Writing to the end of it!");
+					.log("Notice MIO0: File " + randomAccessFile.getName() + " already has data in it. Writing to the end of it!");
 			try {
 				raf.seek(raf.length());
 			} catch (IOException e) {
@@ -62,9 +63,9 @@ public class MessageIO {
 		}
 		StringBuilder sb = new StringBuilder();
 		sb.append(Integer.toString(from, Character.MAX_RADIX));
-		sb.append(SEPERATOR);
+		sb.append(Constants.SEPERATOR);
 		sb.append(Integer.toString(to, Character.MAX_RADIX));
-		sb.append(SEPERATOR);
+		sb.append(Constants.SEPERATOR);
 		for (int i = 0; i < sb.length(); i++) {
 			try {
 				raf.write(sb.charAt(i));
@@ -100,7 +101,7 @@ public class MessageIO {
 		for (long i = msg.pointerFrom; i < msg.pointerTo + 1; i++) {
 			try {
 				char c = (char) raf.read();
-				if (incrementer < 3 && c == SEPERATOR) {
+				if (incrementer < 3 && c == Constants.SEPERATOR) {
 					incrementer++;
 					continue;
 				}

@@ -23,10 +23,13 @@ public class DateCalc {
 		return loggerDate.format(new Date());
 	}
 
-	public static synchronized String getDeviceDate(int days) {
+	public static synchronized String getDeviceDate(int days, int hours, int minutes, int seconds) {
 		Calendar cal = Calendar.getInstance();
 		cal.setTime(new Date());
 		cal.add(Calendar.DATE, days);
+		cal.add(Calendar.HOUR, hours);
+		cal.add(Calendar.MINUTE, minutes);
+		cal.add(Calendar.SECOND, seconds);
 		return deviceDate.format(cal.getTime());
 	}
 

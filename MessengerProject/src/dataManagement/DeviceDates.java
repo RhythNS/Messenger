@@ -5,12 +5,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import server.Constants;
+
 public class DeviceDates {
 
 	private File file;
 	private RandomAccessFile raf;
-	private final int BYTES_PER_DATE = 14, BYTES_PER_USER = BYTES_PER_DATE * 50, DAYS_FOR_OLD_MESSAGES = -1;
-	public final char FILLER = '#';
+	private final int BYTES_PER_DATE = 14, BYTES_PER_USER = BYTES_PER_DATE * 50;
 
 	DeviceDates(File saveDir) {
 		file = new File(saveDir, "devicesDate.txt");
@@ -25,7 +26,7 @@ public class DeviceDates {
 			Logger.getInstance().log("Notice DD0: DevicesDate does not exists. Making one!");
 			try {
 				for (int b = 0; b < BYTES_PER_USER; b++)
-					raf.write(FILLER);
+					raf.write(Constants.FILLER);
 			} catch (IOException e) {
 				Logger.getInstance().log("Error DD1: Could not init the RandomAccessFile! #BlameBene");
 				e.printStackTrace();
@@ -40,7 +41,7 @@ public class DeviceDates {
 	 */
 	DeviceLogin login(int tag, int device) {
 		if (isCorrect(tag) || device < 0 || device > BYTES_PER_USER / BYTES_PER_DATE) {
-			String date = DateCalc.getDeviceDate(DAYS_FOR_OLD_MESSAGES);
+			String date = DateCalc.getDeviceDate(Constants.DAYS_GET_FOR_NEW_DEVICE_LOGIN, 0, 0, 0);
 			device = register(tag, date);
 			return new DeviceLogin(date, device);
 		}
@@ -63,10 +64,10 @@ public class DeviceDates {
 				return null;
 			}
 		}
-		if (sb.charAt(0) == FILLER) {
+		if (sb.charAt(0) == Constants.FILLER) {
 			Logger.getInstance().log(
 					"Error DD13: Device Nr returned Filler. Wrong input, file is corrupt or File faulty. #BlameBene");
-			String date = DateCalc.getDeviceDate(DAYS_FOR_OLD_MESSAGES);
+			String date = DateCalc.getDeviceDate(Constants.DAYS_GET_FOR_NEW_DEVICE_LOGIN, 0, 0, 0);
 			device = register(tag, date);
 			return new DeviceLogin(date, device);
 		}
@@ -83,14 +84,14 @@ public class DeviceDates {
 			}
 			for (int i = 0; i < BYTES_PER_DATE; i++) {
 				try {
-					raf.write(FILLER);
+					raf.write(Constants.FILLER);
 				} catch (IOException e) {
 					Logger.getInstance().log("Error DD16: Could not write. #BlameBene");
 					e.printStackTrace();
 					return null;
 				}
 			}
-			String date = DateCalc.getDeviceDate(DAYS_FOR_OLD_MESSAGES);
+			String date = DateCalc.getDeviceDate(Constants.DAYS_GET_FOR_NEW_DEVICE_LOGIN, 0, 0, 0);
 			device = register(tag, date);
 			return new DeviceLogin(date, device);
 		}
@@ -126,7 +127,7 @@ public class DeviceDates {
 		}
 		for (int i = 0; i < amount * BYTES_PER_USER; i++) {
 			try {
-				raf.write(FILLER);
+				raf.write(Constants.FILLER);
 			} catch (IOException e) {
 				Logger.getInstance().log("Error DD11: Could not write. #BlameBene");
 				e.printStackTrace();
@@ -156,7 +157,7 @@ public class DeviceDates {
 			return -1;
 		}
 		try {
-			while (input != FILLER && raf.getFilePointer() < BYTES_PER_USER * (tag + 1)) {
+			while (input != Constants.FILLER && raf.getFilePointer() < BYTES_PER_USER * (tag + 1)) {
 				sb.append(input);
 				input = (char) raf.read();
 			}
@@ -166,7 +167,7 @@ public class DeviceDates {
 			return -1;
 		}
 		int deviceNr = -1;
-		if (sb.length() != 0 && input != FILLER)
+		if (sb.length() != 0 && input != Constants.FILLER)
 			deviceNr = DateCalc.getLowestDateDevice(sb.toString());
 		else
 			try {
@@ -195,7 +196,7 @@ public class DeviceDates {
 		return deviceNr;
 	}
 
-	void logout(int tag, int device) {
+	void logout(int tag, int device, boolean timeout) {
 		try {
 			raf.seek(BYTES_PER_USER * tag + BYTES_PER_DATE * device);
 		} catch (IOException e) {
@@ -204,7 +205,11 @@ public class DeviceDates {
 			e.printStackTrace();
 			return;
 		}
-		String date = DateCalc.getDeviceDate();
+		String date = "";
+		if (timeout)
+			date = DateCalc.getDeviceDate(0, 0, 0, Constants.TIMEOUT_IN_SECONDS);
+		else
+			date = DateCalc.getDeviceDate();
 		for (int i = 0; i < date.length(); i++) {
 			try {
 				raf.write(date.charAt(i));

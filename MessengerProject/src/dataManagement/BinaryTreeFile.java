@@ -5,15 +5,17 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import server.Constants;
+
 public class BinaryTreeFile {
 
-	private File tree;
 	private RandomAccessFile raf;
-	private final static int USERNAME_SIZE = 32, POINTER_SIZE = 6, DATA_SIZE = USERNAME_SIZE + POINTER_SIZE * 3;
-	private final static char FILLER = '#';
+	private final int NAME_SIZE, POINTER_SIZE = 6, DATA_SIZE;
 
-	BinaryTreeFile(File sysLine) {
-		tree = new File(sysLine, "tree.txt");
+	BinaryTreeFile(File tree, int nameSize) {
+		NAME_SIZE = nameSize;
+		DATA_SIZE = NAME_SIZE + POINTER_SIZE * 3;
+
 		if (!tree.exists()) {
 			Logger.getInstance().log("Notice BTF0: BinaryTreeFile does not exists, making one!");
 		}
@@ -26,16 +28,16 @@ public class BinaryTreeFile {
 	}
 
 	/**
-	 * Adds a new User to the file. Returns wheter it succeeded or not!
+	 * Adds a new name to the file. Returns wheter it succeeded or not!
 	 */
-	boolean addUser(int tag, String username) {
-		if (username.length() > USERNAME_SIZE) {
-			Logger.getInstance().log("Error BTF2: Can not save that username. It is too long! #BlameBene");
+	boolean add(int tag, String name) {
+		if (name.length() > NAME_SIZE) {
+			Logger.getInstance().log("Error BTF2: Can not save that name. It is too long! #BlameBene");
 			return false;
 		}
 		try {
 			if (raf.length() == 0) {
-				return makeUser(tag, username);
+				return make(tag, name);
 			}
 		} catch (IOException e) {
 			Logger.getInstance().log("Error BTF1: Could not get the file length! #BlameBene");
@@ -54,9 +56,9 @@ public class BinaryTreeFile {
 			StringBuilder sb = new StringBuilder();
 			char input = 's';
 			try {
-				for (int i = 0; i < USERNAME_SIZE - 1; i++) {
+				for (int i = 0; i < NAME_SIZE - 1; i++) {
 					input = (char) raf.read();
-					if (input == FILLER)
+					if (input == Constants.FILLER)
 						break;
 					sb.append(input);
 				}
@@ -65,19 +67,14 @@ public class BinaryTreeFile {
 				e.printStackTrace();
 				return false;
 			}
-			int result = sb.toString().compareTo(username);
-			try {
-				System.out.println(atPosition + " : " + raf.getFilePointer());
-			} catch (IOException e2) {
-				e2.printStackTrace();
-			}
+			int result = sb.toString().compareTo(name);
 			if (result == 0) {
-				Logger.getInstance().log("Error BTF7: The Username is already registerd! #BlameBene");
+				Logger.getInstance().log("Error BTF7: The name is already registerd! #BlameBene");
 				return false;
-			} else if (result < 0) { // For example res = A, username = Z
-				atPosition = seekAt((atPosition * DATA_SIZE) + USERNAME_SIZE + POINTER_SIZE);
-			} else { // For example res = Z, username = A
-				atPosition = seekAt((atPosition * DATA_SIZE) + USERNAME_SIZE + (POINTER_SIZE * 2));
+			} else if (result < 0) { // For example res = A, name = Z
+				atPosition = seekAt((atPosition * DATA_SIZE) + NAME_SIZE + POINTER_SIZE);
+			} else { // For example res = Z, name = A
+				atPosition = seekAt((atPosition * DATA_SIZE) + NAME_SIZE + (POINTER_SIZE * 2));
 			}
 			if (atPosition == -2)
 				return false;
@@ -104,7 +101,7 @@ public class BinaryTreeFile {
 						return false;
 					}
 				}
-				return makeUser(tag, username);
+				return make(tag, name);
 			}
 		}
 	}
@@ -133,7 +130,7 @@ public class BinaryTreeFile {
 				e.printStackTrace();
 				return -2;
 			}
-			if (input == FILLER)
+			if (input == Constants.FILLER)
 				break;
 			sb.append(input);
 		}
@@ -147,14 +144,13 @@ public class BinaryTreeFile {
 			}
 			return -1;
 		}
-		System.out.println(sb.toString());
 		return (int) Long.parseLong(sb.toString(), Character.MAX_RADIX);
 	}
 
 	/**
 	 * Makes a user at the end of the file. Returns whter it succeeded or not!
 	 */
-	private boolean makeUser(int tag, String username) {
+	private boolean make(int tag, String name) {
 		try {
 			raf.seek(raf.length());
 		} catch (IOException e1) {
@@ -163,14 +159,14 @@ public class BinaryTreeFile {
 			return false;
 		}
 		StringBuilder sb = new StringBuilder();
-		sb.append(username);
-		for (int i = 0; i < USERNAME_SIZE - username.length(); i++) {
-			sb.append(FILLER);
+		sb.append(name);
+		for (int i = 0; i < NAME_SIZE - name.length(); i++) {
+			sb.append(Constants.FILLER);
 		}
 		String convertedTag = Integer.toString(tag, Character.MAX_RADIX);
 		sb.append(convertedTag);
 		for (int i = 0; i < POINTER_SIZE * 3 - convertedTag.length(); i++) {
-			sb.append(FILLER);
+			sb.append(Constants.FILLER);
 		}
 		for (int i = 0; i < sb.length(); i++) {
 			try {
@@ -188,12 +184,18 @@ public class BinaryTreeFile {
 	 * Gets the tag of a user. Returns -1 if the user has not been found.
 	 * Returns -2 if an error occured!
 	 *
-	 * @param username
+	 * @param name
 	 * @return
 	 */
-	int getTag(String username) {
-		if (tree.length() == 0)
+	int getTag(String name) {
+		try {
+			if (raf.length() == 0)
+				return -1;
+		} catch (IOException e2) {
+			Logger.getInstance().log("Error BTF19: Could not get the length! #BlameBene");
+			e2.printStackTrace();
 			return -1;
+		}
 		try {
 			raf.seek(0);
 		} catch (IOException e) {
@@ -218,8 +220,8 @@ public class BinaryTreeFile {
 				e.printStackTrace();
 				return -2;
 			}
-			for (int i = 0; i < USERNAME_SIZE - 1; i++) {
-				if (input == FILLER)
+			for (int i = 0; i < NAME_SIZE - 1; i++) {
+				if (input == Constants.FILLER)
 					break;
 				sb.append(input);
 				try {
@@ -230,10 +232,10 @@ public class BinaryTreeFile {
 					return -2;
 				}
 			}
-			int result = sb.toString().compareTo(username);
+			int result = sb.toString().compareTo(name);
 			if (result == 0) { // Get the tag
 				try {
-					raf.seek(atPosition * DATA_SIZE + USERNAME_SIZE);
+					raf.seek(atPosition * DATA_SIZE + NAME_SIZE);
 				} catch (IOException e) {
 					Logger.getInstance().log("Error BTF17: Could not seek! #BlameBene");
 					e.printStackTrace();
@@ -249,7 +251,7 @@ public class BinaryTreeFile {
 					return -2;
 				}
 				for (int i = 0; i < POINTER_SIZE - 1; i++) {
-					if (input == FILLER)
+					if (input == Constants.FILLER)
 						break;
 					sb.append(input);
 					try {
@@ -265,10 +267,10 @@ public class BinaryTreeFile {
 					return -2;
 				}
 				return (int) Long.parseLong(sb.toString(), Character.MAX_RADIX);
-			} else if (result < 0) { // For example res = A, username = Z
-				atPosition = seekAt(atPosition * DATA_SIZE + USERNAME_SIZE + POINTER_SIZE * 1);
-			} else { // For example res = Z, username = A
-				atPosition = seekAt(atPosition * DATA_SIZE + USERNAME_SIZE + POINTER_SIZE * 2);
+			} else if (result < 0) { // For example res = A, name = Z
+				atPosition = seekAt(atPosition * DATA_SIZE + NAME_SIZE + POINTER_SIZE * 1);
+			} else { // For example res = Z, name = A
+				atPosition = seekAt(atPosition * DATA_SIZE + NAME_SIZE + POINTER_SIZE * 2);
 			}
 			if (atPosition == -1 || atPosition == -2)
 				return atPosition;
