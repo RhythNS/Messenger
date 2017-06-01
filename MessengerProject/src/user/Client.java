@@ -1,27 +1,25 @@
 package user;
 
-import security.KeyConverter;
+import security.Key;
 import socketio.Socket;
 
-import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Arrays;
 
 public class Client implements Runnable{
 
 	private Socket socket;
-	private PublicKey serverPublicKey;
-	private PrivateKey userPrivateKey;
-	private PublicKey userPublicKey;
-	private String lastOnlineDate;
+	private Key key;
+	private final Object userLock = new Object();
+	private User user;
+	private boolean connected;
 
 
-	public Client(String host, int port,String lastOnlineDate) {
+	public Client(String host, int port, User user) {
 		socket = new Socket(host, port);
-		this.lastOnlineDate = lastOnlineDate;
+		this.user = user;
 	}
 
 	public boolean connect() {
@@ -31,51 +29,52 @@ public class Client implements Runnable{
 	/**
 	 * Returns 0 if the registration process failed. Otherwise the tag is returned
 	 */
-	public int register(String username, String password) {
+	public int register(String username, String password) throws IOException {
 		if(!connect()) {
 			System.err.println("Could not connect!");
 			return 0;
 		}
 		// TODO Generate public and private Key
-		write("KEY", userPublicKey.toString());
-		try {
 
-			serverPublicKey = KeyConverter.generatePublicKey(getMessage(socket.readLine()));
-		} catch (IOException e) {
-			System.err.println("Could not read the Key from the server");
-			return 0;
-		}
+		PublicKey userPublicKey = null;
+		write("KEY","", userPublicKey.toString());
+		String synchronisedKey = getMessage(socket.readLine());
+		// TODO: decode Key
+		// TODO: generate synchronised Key
 
-		write("REG", username + "," + password);
-		String response = "";
+		write("REG", -1+"",username + "," + password);
 
-		response = read();
+		String response = read();
 
 		if (getHeader(response).equals("OK")) {
+			user.setDeviceNr(Integer.parseInt(getInfo(response)));
+			connected = true;
+			Thread t = new Thread(this);
+			t.start();
 			return Integer.parseInt(getMessage(response));
 		}
 		return 0;
 	}
 
-	public boolean login(String username, int tag, String password) throws IOException {
+	public boolean login(int tag, String password,int deviceNr) throws IOException {
 		if(!connect()) {
 			System.err.println("Could not connect!");
 			return false;
 		}
 		// TODO Generate public and private Key
-        socket.write("KEY" + "[/]" + userPublicKey.toString());
-		try {
-			serverPublicKey = KeyConverter.generatePublicKey(getMessage(socket.readLine()));
-		} catch (IOException e) {
-			System.err.println("Could not read the Key from the server");
-			return false;
-		}
+
+		PublicKey userPublicKey = null;
+		write("KEY","", userPublicKey.toString());
+		String synchronisedKey = getMessage(socket.readLine());
+		// TODO: decode Key
+		// TODO: generate synchronised Key
 
 		// TODO HASH PASSWORD
-		write("LOG", tag + "," + password);
+		write("LOG", deviceNr+"", tag+","+password);
 		String response = read();
-		if (getHeader(response).equals("YES")) {
-			write("LOD", lastOnlineDate);
+
+		if (getHeader(response).equals("OK")) {
+			connected = true;
 			Thread t = new Thread(this);
 			t.start();
 			return true;
@@ -85,43 +84,23 @@ public class Client implements Runnable{
 		return false;
 	}
 
-	public void writeMessage(int tag, String message) {
-		write("MSG"+ tag,message);
-	}
-
-	public boolean sendData(int tag,String filename,FileInputStream stream, boolean directConnection) throws IOException {
-		if (stream.available() <= 1048576 || directConnection) {
-			write("DATA",tag+","+filename+","+stream.available());
-            if (getHeader(read()).equals("OK")) {
-                byte[] bytes = new byte[1024];
-                int counter = 0;
-                while (stream.available() > 0) {
-                    stream.read(bytes);
-                    while (!send(bytes,counter));
-                }
-                return true;
-            }
-		}
-		return false;
-	}
-
-	public void write(String header, String message) {
+	private void write(String header, String info, String message) {
 		//todo: Encryption
 		try {
-			socket.write(header+"[/]"+message+"\n");
+			socket.write(header+"|"+info+"|"+message+"\n");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public boolean send(byte[] bytes,int blockNr) throws IOException {
+	private boolean send(byte[] bytes,int blockNr) throws IOException {
         //todo: Encryption
 		byte checksum = 0;
 		for (byte b:bytes
 			 ) {
 			checksum ^= b;
 		}
-		write("Block",blockNr+","+checksum);
+		write("Block", blockNr+"", checksum+"");
 		socket.getOutputStream().write(bytes);
 		if (getHeader(read()).equals("OK"))
 			return true;
@@ -129,12 +108,21 @@ public class Client implements Runnable{
 			return false;
 	}
 
+	/**
+	 * This method does x
+	 * @param message the sent message
+	 * @return null
+	 */
 	private String getHeader(String message) {
-		return message.split("[/]", 2)[0];
+		return message.split("|", 3)[0];
+	}
+
+	private String getInfo(String message) {
+		return message.split("|", 3)[1];
 	}
 
 	private String getMessage(String message) {
-		return message.split("[/]", 2)[1];
+		return message.split("|", 3)[2];
 	}
 
 	private String read() {
@@ -147,19 +135,146 @@ public class Client implements Runnable{
 		return null;
 	}
 
-	public static void main(String[] args) throws IOException {
-		File file = new File("C:\\Users\\orbit\\OneDrive\\Bilder\\Eigene Aufnahmen\\Background.png");
-		FileInputStream fileInputStream = new FileInputStream(file);
-		byte[] bytes = new byte[1024];
-		while (fileInputStream.available() > 0) {
-			System.out.println(fileInputStream.read(bytes));
-			System.out.println(Arrays.toString(bytes));
+	public void writeMessage(int tag, String message) {
+		synchronized (userLock) {
+			write("MSG",tag+"",message);
 		}
-		System.out.println();
+	}
+
+	public boolean sendData(int tag,String filename,FileInputStream stream, boolean directConnection) throws IOException {
+		synchronized (userLock) {
+			if (stream.available() <= 1048576 || directConnection) {
+				write("DATA",tag+"",filename);
+				byte[] bytes = new byte[1024];
+				int counter = 0;
+				while (stream.available() > 0) {
+					stream.read(bytes);
+					while (!send(bytes,counter));
+					counter++;
+				}
+				write("EOT","","");
+				return true;
+			}
+			return false;
+		}
+	}
+
+	public void messageRequest(String date) {
+		write("MSGR",date,"");
+	}
+
+	public void requestFriendslist() {
+		write("RFL","","");
+	}
+
+	public void sendFriendlist(int[] friendList) {
+		StringBuilder stringBuilder = new StringBuilder();
+		for (int i = 0; i < friendList.length-1; i++) {
+			stringBuilder.append(friendList[i]).append(",");
+		}
+		stringBuilder.append(friendList[friendList.length]);
+		write("SFL", friendList.length + "", stringBuilder.toString());
+	}
+
+	public Contact[] searchFriends(String username) {
+		write("SF","",username);
+		String list = read();
+		String[] conatactStrings = getMessage(list).split("(/)");
+		Contact[] contacts = new Contact[conatactStrings.length];
+		for (int i = 0; i < conatactStrings.length; i++) {
+			String[] s = conatactStrings[i].split(",");
+			contacts[i] = new Contact(s[0],Integer.parseInt(s[1]));
+		}
+		return contacts;
+	}
+
+	public void sendFriendRequest(int tag) {
+		write("FR", tag + "", "");
+	}
+
+	public void replyFriendRequest(int tag, boolean accept) {
+		write("RFR", tag + "", accept + "");
+	}
+
+	public void removeFriend(int tag, String message) {
+		write("RF", tag + "", message);
+	}
+
+	public int createGroup(String groupName, int[] tags) {
+		StringBuilder stringBuilder = new StringBuilder();
+		for (int i = 0; i < tags.length-1; i++) {
+			stringBuilder.append(tags[i]).append(",");
+		}
+		stringBuilder.append(tags[tags.length]);
+		write("CG", groupName,stringBuilder.toString());
+		return Integer.parseInt(getInfo(read()));
+	}
+
+	public void groupInvite(int groupTag, int userTag) {
+		write("GI", groupTag + "", userTag + "");
+	}
+
+	public void promoteGroupLeader(int groupTag, int userTag) {
+		write("PGL", groupTag + "", userTag + "");
+	}
+
+	public void kickGroupMember(int groupTag, int userTag) {
+		write("KGM", groupTag + "", userTag + "");
+	}
+
+	public void leaveGroup(int groupTag) {
+		write("LG", groupTag + "", "");
 	}
 
 	@Override
 	public void run() {
-
+		while (connected) {
+			String recieved = read();
+			switch (getHeader(recieved)) {
+				case "MSG":
+					String fromTo = getInfo(recieved);
+					String[] tags = fromTo.split(",");
+					user.messageReceived(Integer.parseInt(tags[0]), Integer.parseInt(tags[1]), getMessage(recieved));
+					break;
+				case "DATA":
+					fromTo = getInfo(recieved);
+					tags = fromTo.split(",");
+					FileOutputStream fileOutputStream = user.dataReceived(Integer.parseInt(tags[0]), Integer.parseInt(tags[1]),getMessage(recieved));
+					String info = read();
+					do {
+						byte[] bytes = new byte[1024];
+						byte checkSumme = Byte.parseByte(getMessage(info));
+						do {
+							try {
+								socket.read(bytes, 1024);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							for (byte b : bytes
+									) {
+								checkSumme ^= b;
+							}
+							if (checkSumme == 0) {
+								write("OK","","");
+							}else
+								write("NOK","","");
+						} while (checkSumme != 0);
+						try {
+							fileOutputStream.write(bytes);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						info = read();
+					} while (!getHeader(info).equals("EOT"));
+					try {
+						fileOutputStream.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					break;
+				default:
+					break;
+			}
+		}
 	}
 }
