@@ -16,4 +16,11 @@ public class Account {
 		clients = new ArrayList<>();
 	}
 
+	public int getTag() {
+		return tag;
+	}
+
+	public void addClient(Client client) {
+		clients.add(client);
+	}
 }
