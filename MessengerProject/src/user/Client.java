@@ -45,7 +45,7 @@ public class Client implements Runnable{
 		String response = read();
 
 		if (getHeader(response).equals("OK")) {
-			user.setDeviceNr(Integer.parseInt(getInfo(response)));
+			user.setDeviceNumber(Integer.parseInt(getInfo(response)));
 			connected = true;
 			Thread t = new Thread(this);
 			t.start();
@@ -257,7 +257,7 @@ public class Client implements Runnable{
 					case "MSG":
 						String fromTo = getInfo(recieved);
 						String[] tags = fromTo.split(",");
-						user.messageReceived(Integer.parseInt(tags[0]), Integer.parseInt(tags[1]), getMessage(recieved));
+						user.messageRecieved(Integer.parseInt(tags[0]), Integer.parseInt(tags[1]), getMessage(recieved));
 						break;
 					case "DATA":
 						fromTo = getInfo(recieved);

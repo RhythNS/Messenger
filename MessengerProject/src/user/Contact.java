@@ -2,19 +2,32 @@ package user;
 
 public class Contact {
 
-	private int tag;
+	
 	private String username;
+	private int tag;
+	private Chat chat;
+	
+	public Contact(String username,int tag){
+		this.username=username;
+		this.tag=tag;
+		this.chat=new Chat(this);
+	}
 
-	public Contact(String username, int tag) {
-		this.username = username;
-		this.tag = tag;
+	public String getUsername() {
+		return username;
 	}
 
 	public int getTag() {
 		return tag;
 	}
 
-	public String getUsername() {
-		return username;
+	public Chat getChat() {
+		return chat;
+	}
+	public void setChat(Chat chat) {
+		this.chat = chat;
+	}
+	public void updateChat(Message m){
+		
 	}
 }
