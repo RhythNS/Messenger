@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import dataManagement.DataManagement;
-import dataManagement.DateCalc;
+import dataManagement.DeviceLogin;
 import dataManagement.Logger;
 import dataManagement.Mailbox;
 import secruity.KeyStoreSynchron;
@@ -55,8 +55,6 @@ public class Server {
                     } catch (IOException e) {
                         System.err.println("Something went wrong with accepting the socket! #BlameBene");
                         e.printStackTrace();
-
-                        continue;
                     }
                 }
             });
@@ -70,14 +68,13 @@ public class Server {
 	 * 			returns null, if something went wrong
 	 */
 
-	public Account registerUser(String userPass) {
+	Account registerUser(String user, String pass) {
 		synchronized (userlock) {
-			if (userPass == null) {
+			if (user == null|| pass == null) {
 				Logger.getInstance().log("Ser001: User cannot register because UserPass is null!");
 				return null;
 			}
-			String[] informations = userPass.split(";");
-			int tag = dataMangement.registerUser(informations[0], informations[1]);
+			int tag = dataMangement.registerUser(user, pass);
 			if(tag == 0){
 				return null;
 			}
@@ -85,7 +82,23 @@ public class Server {
 			accounts.add(account);
 
 			return account;
+		}
+	}
 
+
+	Account loginAccount(int tag, String passwort){
+		synchronized (userlock){
+
+			if(!dataMangement.login(tag,passwort))return null;
+
+			for (Account a: accounts){
+				if(a.getTag() == tag){
+					return a;
+				}
+			}
+			Account a = new Account(tag, this);
+			accounts.add(a);
+			return a;
 		}
 	}
 
@@ -98,7 +111,8 @@ public class Server {
 	 *
 	 * 		if the login went wrong somehow --> returns null
 	 */
-	public Account loginAccount(String username,String passwort) {
+
+	Account loginAccount(String username, String passwort) {
 
 		synchronized (userlock) {
 			int tag = dataMangement.login(username, passwort);
@@ -118,20 +132,9 @@ public class Server {
 		}
 	}
 
-	public void sendMessage(String message, Account toAccount, Account fromAccount){
+	int createGroup(String name, Account[] accounts) {
 
-
-		dataMangement.saveMessage(fromAccount.getTag(),toAccount.getTag(), DateCalc.getDeviceDate(),message);
-
-	}
-
-	protected void connectUserAccount(Account account) {
-
-	}
-
-	protected int createGroup(String name, Account[] accounts) {
 		int[] tags = new int[accounts.length];
-
 		for (int i = 0; i < tags.length; i++) {
 			tags[i] = accounts[i].getTag();
 		}
@@ -139,18 +142,42 @@ public class Server {
 	}
 
 
-	//TODO save new Friend to Datamanagement
-	public boolean addFriendTo(Account account,int tagOfAccountToAdd) {
+
+	boolean addFriendTo(Account account, int tagOfAccountToAdd) {
 		return dataMangement.addFriend(account.getTag(),tagOfAccountToAdd);
 	}
 
-	public void recieveMessage(Account from, Account to, String message, String date) {
-
-		dataMangement.saveMessage(from.getTag(),to.getTag(),date,message);
-
+	void recieveMessage(int from, Account to, String message, String date) {
+		synchronized (userlock) {
+			dataMangement.saveMessage(from, to.getTag(), date, message);
+		}
 	}
 
-	public Mailbox requestMessage(Account sender, String date) {
-		return dataMangement.getMessages(sender.getTag(),date);
+	public boolean removeFriend(int tagToRemove, int tagFromWhichAcc) {
+		synchronized (userlock) {
+			return dataMangement.removeFriend(tagFromWhichAcc, tagToRemove);
+		}
+	}
+
+	Mailbox requestMessage(Account sender, String date) {
+		synchronized (userlock) {
+			return dataMangement.getMessages(sender.getTag(), date);
+		}
+	}
+
+	int[] getFriendList(int account) {
+		synchronized (userlock) {
+			return dataMangement.getFriends(account);
+		}
+	}
+
+	boolean leaveGroup(int accTag, int grpTag) {
+		synchronized (userlock) {
+			return dataMangement.removeFromGroup(accTag, grpTag);
+		}
+	}
+
+	public DeviceLogin diviceLogin(int tag,int deviceNr) {
+		return dataMangement.loginDevice(tag,deviceNr);
 	}
 }

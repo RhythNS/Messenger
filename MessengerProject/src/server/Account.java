@@ -8,6 +8,7 @@ import dataManagement.TextMessage;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 
 public class Account {
@@ -25,18 +26,17 @@ public class Account {
 		this.password = password;
 	}
 
-	public void recieveMessage(Account from, String message, Client whoGotIt){
+	public void recieveMessage(int from, String message, Client whoGotIt){
 		synchronized (object) {
 			String date = DateCalc.getMessageDate();
 			for (Client c : clients) {
 				if (!whoGotIt.equals(c))
-					c.write(tag, from.tag, date, message);
+					c.write(tag, from, date, message);
 			}
 
 			server.recieveMessage(from,this,message,date);
 		}
 	}
-
 	public void requestMessage(Client sender,String date){
 		Mailbox mb = server.requestMessage(this, date);
 		if(mb == null)return;
@@ -93,5 +93,19 @@ public class Account {
 
 	public void addClient(Client client) {
 		clients.add(client);
+	}
+
+	public int[] getFriendList(){
+		return server.getFriendList(tag);
+	}
+
+	public boolean leaveGroup(int grpTag){
+		boolean res = server.leaveGroup(tag ,grpTag);
+		return res;
+	}
+	public FileOutputStream dataReceived(int tag, String message) {
+
+
+		return null;
 	}
 }
