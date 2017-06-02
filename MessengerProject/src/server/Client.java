@@ -1,7 +1,7 @@
 package server;
 
-import security.KeyConverter;
 import socketio.Socket;
+import user.KeyConverter;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -28,7 +28,7 @@ public class Client implements Runnable {
 		PublicKey userPublicKey;
 
 		try {
-			userPublicKey = KeyConverter.generateKeyFromString(getMessage(socket.readLine()));
+			userPublicKey = KeyConverter.generatePublicKeyFromString(getMessage(socket.readLine()));
 		} catch (IOException e) {
 			System.err.println("Could not read the Key from the server");
 		}
@@ -111,9 +111,9 @@ public class Client implements Runnable {
 		}
 	}
 
-	public boolean sendData(int from, int to, String filename, FileInputStream stream, boolean directConnection) throws IOException {
+	public boolean sendData(int from, int to, String filename, FileInputStream stream) throws IOException {
 		synchronized (userLock) {
-			if (stream.available() <= 1048576 || directConnection) {
+			if (stream.available() <= 1048576) {
 				write("DATA", from + "," + to, filename);
 				byte[] bytes = new byte[1024];
 				int counter = 0;
@@ -130,83 +130,124 @@ public class Client implements Runnable {
 	}
 
 	public void sendFriendlist(int[] friendlist) {
-		StringBuilder stringBuilder = new StringBuilder();
-		for (int f : friendlist
-				) {
-			stringBuilder.append(f + ",");
+		synchronized (userLock) {
+			StringBuilder stringBuilder = new StringBuilder();
+			for (int f : friendlist
+					) {
+				stringBuilder.append(f + ",");
+			}
+			write("SFL", friendlist.length + "", stringBuilder.toString());
 		}
-		write("SFL", friendlist.length + "", stringBuilder.toString());
 	}
 
 	public void sendFriendRequest(int tag, String username) {
-		write("FR", tag + "", username);
+		synchronized (userLock) {
+			write("FR", tag + "", username);
+		}
 	}
 
 	public void replyFriendRequest(int tag, boolean accept) {
-		write("RFR", tag + "", accept + "");
+		synchronized (userLock) {
+			write("RFR", tag + "", accept + "");
+		}
 	}
 
 	public void removeFriend(int tag, String message) {
-		write("RF", tag + "", message);
+		synchronized (userLock) {
+			write("RF", tag + "", message);
+		}
 	}
 
 	public void groupInvite(int groupTag, String groupName) {
-		write("GI", groupTag + "", groupName);
+		synchronized (userLock) {
+			write("GI", groupTag + "", groupName);
+		}
 	}
 
 	public void promoteGroupLeader(int groupTag) {
-		write("PGL", groupTag + "", "");
+		synchronized (userLock) {
+			write("PGL", groupTag + "", "");
+		}
 	}
 
 	public void kickGroupMember(int groupTag) {
-		write("KGM", groupTag + "", "");
+		synchronized (userLock) {
+			write("KGM", groupTag + "", "");
+		}
 	}
 
 	@Override
 	public void run() {
 		while (connected) {
 			String received = read();
-			switch (getHeader(received)) {
-				case "MSG":
-					account.messageReceived(Integer.parseInt(getInfo(received)), getMessage(received));
-					break;
-				case "DATA":
-					FileOutputStream fileOutputStream = account.dataReceived(Integer.parseInt(getInfo(received)),getMessage(received));
-					String info = read();
-					do {
-						byte[] bytes = new byte[1024];
-						byte checkSumme = Byte.parseByte(getMessage(info));
+			synchronized (userLock) {
+				switch (getHeader(received)) {
+					case "MSG":
+						account.messageReceived(Integer.parseInt(getInfo(received)), getMessage(received));
+						break;
+					case "DATA":
+						FileOutputStream fileOutputStream = account.dataReceived(Integer.parseInt(getInfo(received)),getMessage(received));
+						String info = read();
 						do {
+							byte[] bytes = new byte[1024];
+							byte checkSumme = Byte.parseByte(getMessage(info));
+							do {
+								try {
+									socket.read(bytes, 1024);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+								for (byte b : bytes
+										) {
+									checkSumme ^= b;
+								}
+								if (checkSumme == 0) {
+									write("OK","","");
+								}else
+									write("NOK","","");
+							} while (checkSumme != 0);
 							try {
-								socket.read(bytes, 1024);
+								fileOutputStream.write(bytes);
 							} catch (IOException e) {
 								e.printStackTrace();
 							}
-							for (byte b : bytes
-									) {
-								checkSumme ^= b;
-							}
-							if (checkSumme == 0) {
-								write("OK","","");
-							}else
-								write("NOK","","");
-						} while (checkSumme != 0);
+							info = read();
+						} while (!getHeader(info).equals("EOT"));
 						try {
-							fileOutputStream.write(bytes);
+							fileOutputStream.close();
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
-						info = read();
-					} while (!getHeader(info).equals("EOT"));
-					try {
-						fileOutputStream.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					break;
-				default:
-					break;
+						break;
+					case "MSGR":
+						break;
+					case "RFL":
+						break;
+					case "SF":
+						break;
+					case "FR":
+						break;
+					case "SFL":
+						break;
+					case "CG":
+						break;
+					case "GI":
+						break;
+					case "PGL":
+						break;
+					case "LG":
+						break;
+					case "KGM":
+						break;
+					case "RF":
+						break;
+					case "RFR":
+						break;
+					default:
+						break;
+				}
 			}
+
 		}
 	}
 }

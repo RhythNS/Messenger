@@ -1,6 +1,5 @@
 package user;
 
-import security.Key;
 import socketio.Socket;
 
 import java.io.FileInputStream;
@@ -11,7 +10,6 @@ import java.security.PublicKey;
 public class Client implements Runnable{
 
 	private Socket socket;
-	private Key key;
 	private final Object userLock = new Object();
 	private User user;
 	private boolean connected;
@@ -160,120 +158,160 @@ public class Client implements Runnable{
 	}
 
 	public void messageRequest(String date) {
-		write("MSGR",date,"");
+		synchronized (userLock) {
+			write("MSGR",date,"");
+		}
 	}
 
 	public void requestFriendslist() {
-		write("RFL","","");
+		synchronized (userLock) {
+			write("RFL","","");
+		}
 	}
 
 	public void sendFriendlist(int[] friendList) {
-		StringBuilder stringBuilder = new StringBuilder();
-		for (int i = 0; i < friendList.length-1; i++) {
-			stringBuilder.append(friendList[i]).append(",");
+		synchronized (userLock) {
+			StringBuilder stringBuilder = new StringBuilder();
+			for (int i = 0; i < friendList.length-1; i++) {
+				stringBuilder.append(friendList[i]).append(",");
+			}
+			stringBuilder.append(friendList[friendList.length]);
+			write("SFL", friendList.length + "", stringBuilder.toString());
 		}
-		stringBuilder.append(friendList[friendList.length]);
-		write("SFL", friendList.length + "", stringBuilder.toString());
 	}
 
 	public Contact[] searchFriends(String username) {
-		write("SF","",username);
-		String list = read();
-		String[] conatactStrings = getMessage(list).split("(/)");
-		Contact[] contacts = new Contact[conatactStrings.length];
-		for (int i = 0; i < conatactStrings.length; i++) {
-			String[] s = conatactStrings[i].split(",");
-			contacts[i] = new Contact(s[0],Integer.parseInt(s[1]));
+		synchronized (userLock) {
+			write("SF","",username);
+			String list = read();
+			String[] conatactStrings = getMessage(list).split("(/)");
+			Contact[] contacts = new Contact[conatactStrings.length];
+			for (int i = 0; i < conatactStrings.length; i++) {
+				String[] s = conatactStrings[i].split(",");
+				contacts[i] = new Contact(s[0],Integer.parseInt(s[1]));
+			}
+			return contacts;
 		}
-		return contacts;
 	}
 
 	public void sendFriendRequest(int tag) {
-		write("FR", tag + "", "");
+		synchronized (userLock) {
+			write("FR", tag + "", "");
+		}
 	}
 
 	public void replyFriendRequest(int tag, boolean accept) {
-		write("RFR", tag + "", accept + "");
+		synchronized (userLock) {
+			write("RFR", tag + "", accept + "");
+		}
 	}
 
 	public void removeFriend(int tag, String message) {
-		write("RF", tag + "", message);
+		synchronized (userLock) {
+			write("RF", tag + "", message);
+		}
 	}
 
 	public int createGroup(String groupName, int[] tags) {
-		StringBuilder stringBuilder = new StringBuilder();
-		for (int i = 0; i < tags.length-1; i++) {
-			stringBuilder.append(tags[i]).append(",");
+		synchronized (userLock) {
+			StringBuilder stringBuilder = new StringBuilder();
+			for (int i = 0; i < tags.length-1; i++) {
+				stringBuilder.append(tags[i]).append(",");
+			}
+			stringBuilder.append(tags[tags.length]);
+			write("CG", groupName,stringBuilder.toString());
+			return Integer.parseInt(getInfo(read()));
 		}
-		stringBuilder.append(tags[tags.length]);
-		write("CG", groupName,stringBuilder.toString());
-		return Integer.parseInt(getInfo(read()));
 	}
 
 	public void groupInvite(int groupTag, int userTag) {
-		write("GI", groupTag + "", userTag + "");
+		synchronized (userLock) {
+			write("GI", groupTag + "", userTag + "");
+		}
 	}
 
 	public void promoteGroupLeader(int groupTag, int userTag) {
-		write("PGL", groupTag + "", userTag + "");
+		synchronized (userLock) {
+			write("PGL", groupTag + "", userTag + "");
+		}
 	}
 
 	public void kickGroupMember(int groupTag, int userTag) {
-		write("KGM", groupTag + "", userTag + "");
+		synchronized (userLock) {
+			write("KGM", groupTag + "", userTag + "");
+		}
 	}
 
 	public void leaveGroup(int groupTag) {
-		write("LG", groupTag + "", "");
+		synchronized (userLock) {
+			write("LG", groupTag + "", "");
+		}
 	}
 
 	@Override
 	public void run() {
 		while (connected) {
 			String recieved = read();
-			switch (getHeader(recieved)) {
-				case "MSG":
-					String fromTo = getInfo(recieved);
-					String[] tags = fromTo.split(",");
-					user.messageReceived(Integer.parseInt(tags[0]), Integer.parseInt(tags[1]), getMessage(recieved));
-					break;
-				case "DATA":
-					fromTo = getInfo(recieved);
-					tags = fromTo.split(",");
-					FileOutputStream fileOutputStream = user.dataReceived(Integer.parseInt(tags[0]), Integer.parseInt(tags[1]),getMessage(recieved));
-					String info = read();
-					do {
-						byte[] bytes = new byte[1024];
-						byte checkSumme = Byte.parseByte(getMessage(info));
+			synchronized (userLock) {
+				switch (getHeader(recieved)) {
+					case "MSG":
+						String fromTo = getInfo(recieved);
+						String[] tags = fromTo.split(",");
+						user.messageReceived(Integer.parseInt(tags[0]), Integer.parseInt(tags[1]), getMessage(recieved));
+						break;
+					case "DATA":
+						fromTo = getInfo(recieved);
+						tags = fromTo.split(",");
+						FileOutputStream fileOutputStream = user.dataReceived(Integer.parseInt(tags[0]), Integer.parseInt(tags[1]),getMessage(recieved));
+						String info = read();
 						do {
+							byte[] bytes = new byte[1024];
+							byte checkSumme = Byte.parseByte(getMessage(info));
+							do {
+								try {
+									socket.read(bytes, 1024);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+								for (byte b : bytes
+										) {
+									checkSumme ^= b;
+								}
+								if (checkSumme == 0) {
+									write("OK","","");
+								}else
+									write("NOK","","");
+							} while (checkSumme != 0);
 							try {
-								socket.read(bytes, 1024);
+								fileOutputStream.write(bytes);
 							} catch (IOException e) {
 								e.printStackTrace();
 							}
-							for (byte b : bytes
-									) {
-								checkSumme ^= b;
-							}
-							if (checkSumme == 0) {
-								write("OK","","");
-							}else
-								write("NOK","","");
-						} while (checkSumme != 0);
+							info = read();
+						} while (!getHeader(info).equals("EOT"));
 						try {
-							fileOutputStream.write(bytes);
+							fileOutputStream.close();
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
-						info = read();
-					} while (!getHeader(info).equals("EOT"));
-					try {
-						fileOutputStream.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					break;
-				default:
-					break;
+						break;
+					case "FR":
+						break;
+					case "SFL":
+						break;
+					case "GI":
+						break;
+					case "PGL":
+						break;
+					case "RF":
+						break;
+					case "RFR":
+						break;
+					case "UGM":
+						break;
+					default:
+						break;
+				}
 			}
 		}
 	}
