@@ -6,6 +6,7 @@ import sun.misc.BASE64Encoder;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
@@ -24,10 +25,18 @@ public class KeyConverter {
      * @return Key[0] = Public Key
      *         Key[1] = Private Key
      */
+
+
     public static Key[] generateAssynchronPair(){
         try {
-            KeyPair kp = KeyPairGenerator.getInstance("RSA").genKeyPair();
+
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+            keyPairGenerator.initialize(1024);
+
+            KeyPair kp = keyPairGenerator.generateKeyPair();
+
             return new Key[]{kp.getPublic(),kp.getPrivate()};
+
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
@@ -35,37 +44,59 @@ public class KeyConverter {
     }
 
     public static SecretKey generateSynchronKey(){
-        KeyGenerator keyGenerator = null;
+        KeyGenerator keyGenerator;
         try {
+
             keyGenerator = KeyGenerator.getInstance("AES");
+            keyGenerator.init(128);
+
+            return keyGenerator.generateKey();
+
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-        if (keyGenerator != null) {
-            keyGenerator.init(128);
-        }
-        return keyGenerator != null ? keyGenerator.generateKey() : null;
+        return null;
     }
 
-    public static PublicKey generateKeyFromString(String keystring){
+    public static SecretKey generateSecretKeyFromString(String keystring){
+
+        BASE64Decoder decoder = new BASE64Decoder();
+        try {
+            byte[] decodedString = decoder.decodeBuffer(keystring);
+
+            return new SecretKeySpec(decodedString,0,decodedString.length,"AES");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    public static PublicKey generatePublicKeyFromString(String keystring){
+
         BASE64Decoder decoder = new BASE64Decoder();
         try {
             byte[] keybytes = decoder.decodeBuffer(keystring);
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keybytes);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+
             return keyFactory.generatePublic(keySpec);
+
         } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public static String convertKeyToString(PublicKey k){
+    public static String convertKeyToString(Key k){
+
         byte[] encodedKey = k.getEncoded();
         BASE64Encoder encoder = new BASE64Encoder();
-        return encoder.encode(encodedKey);
 
+        return encoder.encode(encodedKey);
     }
+
 
 
 
