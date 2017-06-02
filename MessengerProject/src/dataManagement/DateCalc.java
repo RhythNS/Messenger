@@ -7,20 +7,21 @@ import java.util.Date;
 
 public class DateCalc {
 
-	private static SimpleDateFormat messageDate = new SimpleDateFormat("HHmmss"),
-			deviceDate = new SimpleDateFormat("yyyyMMddHHmmss"),
-			loggerDate = new SimpleDateFormat("dd-MM-YYYY_HH.mm.ss");;
+	private static SimpleDateFormat forDay = new SimpleDateFormat("HHmmss"),
+			wholeYear = new SimpleDateFormat("yyyyMMddHHmmss"),
+			logger = new SimpleDateFormat("dd-MM-YYYY_HH.mm.ss"),
+			forYear = new SimpleDateFormat("yyyyMMdd");
 
 	public static String getMessageDate() {
-		return messageDate.format(new Date());
+		return forDay.format(new Date());
 	}
 
 	public static String getDeviceDate() {
-		return deviceDate.format(new Date());
+		return wholeYear.format(new Date());
 	}
 
 	public static String getLoggerDate() {
-		return loggerDate.format(new Date());
+		return logger.format(new Date());
 	}
 
 	public static synchronized String getDeviceDate(int days, int hours, int minutes, int seconds) {
@@ -30,23 +31,55 @@ public class DateCalc {
 		cal.add(Calendar.HOUR, hours);
 		cal.add(Calendar.MINUTE, minutes);
 		cal.add(Calendar.SECOND, seconds);
-		return deviceDate.format(cal.getTime());
+		return wholeYear.format(cal.getTime());
 	}
 
 	public static boolean isDeviceDateCorrect(String date) {
 		try {
-			deviceDate.parse(date);
+			wholeYear.parse(date);
 		} catch (ParseException e) {
 			return false;
 		}
 		return true;
 	}
 
-	public static int getLowestDateDevice(String string) { // 14
-		Date[] dates = new Date[50];
+	public static int getLowestDateMessageDirector(MessageIO[] messages) {
+		Date[] dates = new Date[messages.length];
+		for (int i = 0; i < messages.length; i++) {
+			if (messages[i] != null)
+				try {
+					dates[i] = forYear.parse(messages[i].getDate());
+				} catch (ParseException e) {
+					Logger.getInstance().log("Error CD1: Could not parse the date! #BlameBene");
+					e.printStackTrace();
+					return -1;
+				}
+		}
+		int number = 0;
+		Date date = null;
+		for (; number < dates.length; number++) {
+			if (dates[number] != null) {
+				date = dates[number];
+				break;
+			}
+		}
+		if (date == null) {
+			Logger.getInstance().log("Error CD2: All messages were null! #BlameBene");
+			return -1;
+		}
+		for (int i = number + 1; i < dates.length; i++)
+			if (dates[i] != null && date.compareTo(dates[i]) > 0) {
+				date = dates[i];
+				number = i;
+			}
+		return number;
+	}
+
+	public static int getLowestDateDevice(String[] strings) {
+		Date[] dates = new Date[strings.length];
 		for (int i = 0; i < dates.length; i++) {
 			try {
-				dates[i] = deviceDate.parse(string.substring(i * 14, (i + 1) * 14 - 1));
+				dates[i] = wholeYear.parse(strings[i]);
 			} catch (ParseException e) {
 				Logger.getInstance().log("Error CD0: Could not parse the date! #BlameBene");
 				e.printStackTrace();
@@ -54,8 +87,8 @@ public class DateCalc {
 			}
 		}
 		int number = 0;
-		for (int i = 0; i < dates.length - 1; i++)
-			if (dates[i].compareTo(dates[i + 1]) < 0)
+		for (int i = 1; i < dates.length; i++)
+			if (dates[number].compareTo(dates[i]) < 0)
 				number = i;
 
 		return number;
@@ -64,12 +97,15 @@ public class DateCalc {
 	public static void main(String[] args) {
 		StringBuilder sb = new StringBuilder();
 		Calendar cal = Calendar.getInstance();
-		for (int i = 0; i < 200; i++) {
+		MessageIO[] messages = new MessageIO[50];
+		for (int i = 0; i < messages.length; i++) {
 			cal.setTime(new Date());
 			cal.add(Calendar.HOUR, (int) (Math.random() * 999999));
-			sb.append(DateCalc.deviceDate.format(cal.getTime()));
+			messages[i] = new MessageIO(forYear.format(cal.getTime()), null);
+			System.out.print(i + ": " + messages[i].getDate() + "\n");
 		}
-		System.out.println(sb.toString());
+		System.out.println();
+		System.out.println(DateCalc.getLowestDateMessageDirector(messages));
 	}
 
 }

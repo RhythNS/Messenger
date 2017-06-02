@@ -11,9 +11,22 @@ public class DataManagement {
 	 */
 	private ArgumentRandomAccessFile usersArgument;
 	private BinaryTreeFile usersTree;
+	private FriendList friendList;
+	private File userDir;
+
+	/**
+	 * Aguments: 0: name
+	 */
+	private ArgumentRandomAccessFile groupArguments;
+	private BinaryTreeFile groupTree;
+	private GroupList groupList;
+	private File groupDir;
+
 	private DeviceDates devicesDates;
-	private final Object usersLock = new Object(), dateLock = new Object();
+	private final Object usersLock = new Object(), dateLock = new Object(), groupLock = new Object();
 	private Thread checkForDelete;
+
+	public boolean usersLoggedIn = false;
 
 	/**
 	 * Standard Constructor for DataManagement
@@ -33,9 +46,19 @@ public class DataManagement {
 		logDir.mkdirs();
 		Logger.getInstance().setFile(logDir);
 
-		usersArgument = new ArgumentRandomAccessFile(saveDirectory, Constants.MAX_USERNAME_SIZE,
+		userDir = new File(saveDirectory, "users");
+		userDir.mkdirs();
+		groupDir = new File(saveDirectory, "groups");
+		groupDir.mkdirs();
+
+		usersArgument = new ArgumentRandomAccessFile(new File(userDir, "arguments.txt"), Constants.MAX_USERNAME_SIZE,
 				Constants.MAX_PASSWORD_SIZE);
-		usersTree = new BinaryTreeFile(new File(saveDirectory, "usersBinaryTree.txt"), Constants.MAX_USERNAME_SIZE);
+		usersTree = new BinaryTreeFile(new File(userDir, "binaryTree.txt"), Constants.MAX_USERNAME_SIZE);
+		friendList = new FriendList(new File(userDir, "list.txt"));
+
+		groupArguments = new ArgumentRandomAccessFile(new File(groupDir, "arguments.txt"), Constants.MAX_GROUP_NAME);
+		groupTree = new BinaryTreeFile(new File(groupDir, "tree.txt"), Constants.MAX_GROUP_NAME);
+		groupList = new GroupList(new File(groupDir, "list.txt"));
 
 		devicesDates = new DeviceDates(saveDirectory);
 
@@ -75,6 +98,7 @@ public class DataManagement {
 				if (usersTree.getTag(username) == -1) {
 					int tag = usersArgument.add(username, password);
 					usersTree.add(tag, username);
+					friendList.make(tag);
 					return tag;
 				}
 			}
@@ -125,6 +149,53 @@ public class DataManagement {
 	}
 
 	/**
+	 * Adds a tag to a tags friendlist. Returns wheter it successeded or not!
+	 *
+	 * @param tag
+	 *            The Person who sent the request
+	 * @param befriendedTag
+	 *            The Person to whom the request was sent
+	 */
+	public boolean addFriend(int tag, int befriendedTag) {
+		synchronized (usersLock) {
+			if (tag > 0 && befriendedTag > 0)
+				return friendList.addFriend(tag, befriendedTag);
+			return false;
+		}
+	}
+
+	/**
+	 * Removes a friend from a tag. Returns wheter it successeded or not!
+	 *
+	 * @param tag
+	 *            The Person who wants someone to be removed!
+	 * @param removedFriend
+	 *            The Person who is going to be removed!
+	 */
+	public boolean removeFriend(int tag, int removedFriend) {
+		synchronized (usersLock) {
+			if (tag > 0 && removedFriend > 0)
+				return friendList.deleteFriend(tag, removedFriend);
+			return false;
+		}
+	}
+
+	/**
+	 * Gets all friends from a tag. Can return null if something went wrong or
+	 * no friends were found. *Cough Bene Cough*
+	 *
+	 * @param tag
+	 *            The person who wants to have friends!
+	 */
+	public int[] getFriends(int tag) {
+		synchronized (usersLock) {
+			if (tag > 0)
+				return friendList.getFriends(tag);
+			return null;
+		}
+	}
+
+	/**
 	 * Gets the group Name. Can return null if no group with that tag has been
 	 * found!
 	 *
@@ -132,7 +203,13 @@ public class DataManagement {
 	 *            The Tag of the group.
 	 */
 	public String getGroupName(int tag) {
-		return null; //TODO
+		synchronized (groupLock) {
+			if (tag < 0) {
+				tag = -tag;
+				return groupArguments.getArgument(tag, 0);
+			}
+			return null;
+		}
 	}
 
 	/**
@@ -143,21 +220,36 @@ public class DataManagement {
 	 *            The name of the group
 	 */
 	public int getGroupTag(String name) {
-		return 0; //TODO
+		synchronized (groupLock) {
+			if (name != null && name.length() != 0) {
+				return -groupTree.getTag(name);
+			}
+			return 0;
+		}
 	}
 
 	/**
-	 * Creates a new group with the given name and the tags in a string. Returns
-	 * the new group tag. If failed 0 is returned!
+	 * Creates a new group with the given name and the tags in a integer arraay.
+	 * Returns the new group tag. If failed 0 is returned!
 	 *
 	 * @param name
 	 *            The Name of the group
 	 * @param tags
 	 *            that were initially invited to the group. Should be like
-	 *            2,5,824,235. The first tag is the creator!
+	 *            2,5,824,235. The first tag is the creator/ admin!
 	 */
-	public int createGroup(String name, String tags) {
-		return 0; // TODO
+	public int createGroup(String name, int[] tags) {
+		synchronized (groupLock) {
+			if (tags != null && name != null && name.length() != 0) {
+				int tag = groupTree.getTag(name);
+				if (tag == -1) {
+					tag = groupArguments.add(name);
+					if (groupTree.add(tag, name) && groupList.make(tag, tags))
+						return -tag;
+				}
+			}
+		}
+		return -1;
 	}
 
 	/**
@@ -169,7 +261,16 @@ public class DataManagement {
 	 *            The Tag from the group
 	 */
 	public boolean delteGroup(int userTag, int groupTag) {
-		return false; // TODO
+		synchronized (groupLock) {
+			groupTag = -groupTag;
+			if (userTag > 0 && groupTag > 0) {
+				if (groupList.getAdmin(groupTag) == userTag && groupList.deleteGroup(groupTag)) {
+					String groupName = groupArguments.getArgument(groupTag, 0);
+					return groupName != null && groupArguments.remove(groupTag) && groupTree.delete(groupName);
+				}
+			}
+			return false;
+		}
 	}
 
 	/**
@@ -179,8 +280,13 @@ public class DataManagement {
 	 * @param group
 	 *            the tag of the group
 	 */
-	public String getGroupMembers(int groupTag) {
-		return null; // TODO
+	public int[] getGroupMembers(int groupTag) {
+		synchronized (groupLock) {
+			groupTag = -groupTag;
+			if (groupTag < 0)
+				return groupList.getTags(groupTag);
+			return null;
+		}
 	}
 
 	/**
@@ -193,7 +299,22 @@ public class DataManagement {
 	 * @return
 	 */
 	public boolean isInGroup(int userTag, int groupTag) {
-		return false; //TODO
+		synchronized (groupLock) {
+			groupTag = -groupTag;
+			if (userTag > 0 && groupTag > 0) {
+				return groupList.inGroup(groupTag, userTag);
+			}
+			return false;
+		}
+	}
+
+	public boolean removeFromGroup(int userTag, int groupTag) {
+		synchronized (groupLock) {
+			groupTag = -groupTag;
+			if (userTag > 0 && groupTag > 0)
+				return groupList.deleteMember(groupTag, userTag);
+			return false;
+		}
 	}
 
 	/**

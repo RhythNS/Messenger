@@ -13,14 +13,13 @@ public class ArgumentRandomAccessFile {
 	private final long BYTES_PER_USER;
 	private final int[] arguments;
 
-	ArgumentRandomAccessFile(File sysLine, int... argumentsLength) {
+	ArgumentRandomAccessFile(File file, int... argumentsLength) {
 		int bytesPerUser = 0;
 		for (int i = 0; i < argumentsLength.length; i++) {
 			bytesPerUser += argumentsLength[i];
 		}
 		BYTES_PER_USER = bytesPerUser;
 		arguments = argumentsLength;
-		File file = new File(sysLine, "users.txt");
 		try {
 			raf = new RandomAccessFile(file, "rw");
 		} catch (FileNotFoundException e) {
@@ -114,6 +113,42 @@ public class ArgumentRandomAccessFile {
 			Logger.getInstance().log("Error U7: Could not get length! #BlameBene");
 			e.printStackTrace();
 			return 0;
+		}
+	}
+
+	boolean remove(int tag) {
+		try {
+			raf.seek(BYTES_PER_USER * tag);
+		} catch (IOException e) {
+			Logger.getInstance().log("Error U8: Could not seek! #BlameBene");
+			e.printStackTrace();
+			return false;
+		}
+		for (int i = 0; i < BYTES_PER_USER; i++) {
+			try {
+				raf.write(Constants.FILLER);
+			} catch (IOException e) {
+				e.printStackTrace();
+				return false;
+			}
+		}
+		return true;
+	}
+
+	boolean exists(int tag) {
+		try {
+			raf.seek(BYTES_PER_USER * tag);
+		} catch (IOException e) {
+		Logger.getInstance().log("Error U9: Could not seek! #BlameBene");
+			e.printStackTrace();
+			return false;
+		}
+		try {
+			return raf.read() != Constants.FILLER;
+		} catch (IOException e) {
+			Logger.getInstance().log("Error U10: Could not read! #BlameBene");
+			e.printStackTrace();
+			return false;
 		}
 	}
 }

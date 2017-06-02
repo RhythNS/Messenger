@@ -123,6 +123,15 @@ public class MessageIO {
 		return msg;
 	}
 
+	void close() {
+		try {
+			raf.close();
+		} catch (IOException e) {
+			Logger.getInstance().log("Error MIO10: Could not close! #BlameBene");
+			e.printStackTrace();
+		}
+	}
+
 	Object getLock() {
 		return lock;
 	}

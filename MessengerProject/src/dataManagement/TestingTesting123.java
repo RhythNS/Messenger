@@ -12,7 +12,7 @@ import java.util.Scanner;
 public class TestingTesting123 {
 
 	enum WhatToDo {
-		REGISTER_USER, STESS_USER, LOGIN_USER, DATE, TESTING;
+		REGISTER_USER, STESS_USER, LOGIN_USER, DATE, STRESS_DATE, TESTING, DELETE_FROM_TREE;
 	}
 
 	@SuppressWarnings("static-access")
@@ -27,7 +27,7 @@ public class TestingTesting123 {
 		long l = 2125;
 		System.out.println(Long.parseLong(l + "", Character.MAX_RADIX));
 		System.out.println(Long.toString(l, Character.MAX_RADIX));
-		
+
 		while (correct) {
 			for (int i = 0; i < wtd.values().length; i++) {
 				System.out.println(i + ": " + wtd.values()[i]);
@@ -298,6 +298,17 @@ public class TestingTesting123 {
 				BufferedReader br = new BufferedReader(new FileReader(f));
 				bw.close();
 				br.close();
+			}
+			break;
+		case STRESS_DATE:
+
+			break;
+		case DELETE_FROM_TREE:
+			System.out.print("Continue: ");
+			while(!scan.nextLine().equals("exit")) {
+				System.out.print("name: ");
+				String name = scan.nextLine();
+
 			}
 			break;
 		default:

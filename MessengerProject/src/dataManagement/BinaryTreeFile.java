@@ -10,15 +10,19 @@ import server.Constants;
 public class BinaryTreeFile {
 
 	private RandomAccessFile raf;
-	private final int NAME_SIZE, POINTER_SIZE = 6, DATA_SIZE;
+	private final int NAME_SIZE, POINTER_SIZE, DATA_SIZE;
+	private File tree;
 
 	BinaryTreeFile(File tree, int nameSize) {
 		NAME_SIZE = nameSize;
+		POINTER_SIZE = Constants.POINTER_SIZE;
 		DATA_SIZE = NAME_SIZE + POINTER_SIZE * 3;
 
-		if (!tree.exists()) {
+		this.tree = tree;
+
+		if (!tree.exists())
 			Logger.getInstance().log("Notice BTF0: BinaryTreeFile does not exists, making one!");
-		}
+
 		try {
 			raf = new RandomAccessFile(tree, "rw");
 		} catch (FileNotFoundException e) {
@@ -69,6 +73,36 @@ public class BinaryTreeFile {
 			}
 			int result = sb.toString().compareTo(name);
 			if (result == 0) {
+				if (getTagAtPosition(atPosition).equals(Constants.DELETE_SYMBOL)) {
+					try {
+						raf.seek(atPosition * DATA_SIZE + NAME_SIZE + POINTER_SIZE * 2);
+					} catch (IOException e) {
+						Logger.getInstance().log("Error BTF21: Could not seek! #BlameBene");
+						e.printStackTrace();
+						return false;
+					}
+					sb = new StringBuilder();
+					String toWrite = Integer.toString(tag, Character.MAX_RADIX);
+					for (int i = 0; i < toWrite.length(); i++) {
+						try {
+							raf.write(sb.charAt(i));
+						} catch (IOException e) {
+							Logger.getInstance().log("Error BTF22: Could not write #BlameBene");
+							e.printStackTrace();
+							return false;
+						}
+					}
+					for (int i = toWrite.length(); i < POINTER_SIZE; i++) {
+						try {
+							raf.write(Constants.FILLER);
+						} catch (IOException e) {
+							Logger.getInstance().log("Error BTF23: Could not write! #BlameBene");
+							e.printStackTrace();
+							return false;
+						}
+					}
+					return true;
+				}
 				Logger.getInstance().log("Error BTF7: The name is already registerd! #BlameBene");
 				return false;
 			} else if (result < 0) { // For example res = A, name = Z
@@ -180,9 +214,25 @@ public class BinaryTreeFile {
 		return true;
 	}
 
+	boolean delete(String name) {
+		int tag = getTag(name);
+		if (tag != -1 && tag != -2) {
+			try {
+				raf.write(Constants.DELETE_SYMBOL);
+				for (int i = 1; i < POINTER_SIZE; i++)
+					raf.write(Constants.FILLER);
+			} catch (IOException e) {
+				Logger.getInstance().log("Error BTF26: Could not write #BlameBene");
+				e.printStackTrace();
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * Gets the tag of a user. Returns -1 if the user has not been found.
-	 * Returns -2 if an error occured!
+	 * Returns -2 if an error occured! If successeded the pointer is placed at
+	 * the tag!
 	 *
 	 * @param name
 	 * @return
@@ -235,38 +285,14 @@ public class BinaryTreeFile {
 			int result = sb.toString().compareTo(name);
 			if (result == 0) { // Get the tag
 				try {
-					raf.seek(atPosition * DATA_SIZE + NAME_SIZE);
+					raf.seek(atPosition * DATA_SIZE + POINTER_SIZE * 2);
 				} catch (IOException e) {
-					Logger.getInstance().log("Error BTF17: Could not seek! #BlameBene");
+					Logger.getInstance().log("Error BTF26: Could not seek! #BlameBene");
 					e.printStackTrace();
 					return -2;
 				}
-				sb = new StringBuilder();
-				input = 's';
-				try {
-					input = (char) raf.read();
-				} catch (IOException e) {
-					Logger.getInstance().log("Error BTF15: Could not read! #BlameBene");
-					e.printStackTrace();
-					return -2;
-				}
-				for (int i = 0; i < POINTER_SIZE - 1; i++) {
-					if (input == Constants.FILLER)
-						break;
-					sb.append(input);
-					try {
-						input = (char) raf.read();
-					} catch (IOException e) {
-						System.err.println("Error BTF16: Could not read! #BlameBene");
-						e.printStackTrace();
-						return -2;
-					}
-				}
-				if (sb.length() == 0) {
-					Logger.getInstance().log("Error BTF17: Tag was only Filler! #BlameBene");
-					return -2;
-				}
-				return (int) Long.parseLong(sb.toString(), Character.MAX_RADIX);
+				String res = getTagAtPosition(atPosition);
+				return res == null ? -2 : (int) Long.parseLong(res, Character.MAX_RADIX);
 			} else if (result < 0) { // For example res = A, name = Z
 				atPosition = seekAt(atPosition * DATA_SIZE + NAME_SIZE + POINTER_SIZE * 1);
 			} else { // For example res = Z, name = A
@@ -275,6 +301,105 @@ public class BinaryTreeFile {
 			if (atPosition == -1 || atPosition == -2)
 				return atPosition;
 		}
+	}
+
+	private String getTagAtPosition(int atPosition) {
+		try {
+			raf.seek(atPosition * DATA_SIZE + NAME_SIZE);
+		} catch (IOException e) {
+			Logger.getInstance().log("Error BTF17: Could not seek! #BlameBene");
+			e.printStackTrace();
+			return null;
+		}
+		StringBuilder sb = new StringBuilder();
+		char input = 's';
+		try {
+			input = (char) raf.read();
+		} catch (IOException e) {
+			Logger.getInstance().log("Error BTF15: Could not read! #BlameBene");
+			e.printStackTrace();
+			return null;
+		}
+		for (int i = 0; i < POINTER_SIZE - 1; i++) {
+			if (input == Constants.FILLER)
+				break;
+			sb.append(input);
+			try {
+				input = (char) raf.read();
+			} catch (IOException e) {
+				System.err.println("Error BTF16: Could not read! #BlameBene");
+				e.printStackTrace();
+				return null;
+			}
+		}
+		if (sb.length() == 0) {
+			Logger.getInstance().log("Error BTF17: Tag was only Filler! #BlameBene");
+			return null;
+		}
+		return sb.toString();
+	}
+
+	private String getNameAtPosition(int atPosition) {
+		try {
+			raf.seek(atPosition * DATA_SIZE);
+		} catch (IOException e) {
+			Logger.getInstance().log("Error BTF25: Could not seek! #BlameBene");
+			e.printStackTrace();
+			return null;
+		}
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < NAME_SIZE; i++) {
+			try {
+				char input = (char) raf.read();
+				if (input == Constants.FILLER)
+					break;
+				sb.append(input);
+			} catch (IOException e) {
+				Logger.getInstance().log("Error BTF26: Could not read! #BlameBene");
+				e.printStackTrace();
+				return null;
+			}
+		}
+		return sb.toString();
+	}
+
+	BinaryTreeFile refresh() {
+		try {
+			raf.close();
+		} catch (IOException e) {
+			Logger.getInstance().log("Error BTF20: Could not close the RandomAccessFile! #BlameBene");
+			e.printStackTrace();
+			return this;
+		}
+		String name = tree.getName();
+		File backup = new File(tree.getParentFile(), "backup" + name);
+		if (backup.exists())
+			backup.delete();
+		tree.renameTo(backup);
+		tree = new File(tree.getParentFile(), name);
+		try {
+			raf = new RandomAccessFile(backup, "rw");
+		} catch (FileNotFoundException e) {
+			Logger.getInstance().log("Error BTF24: Could not init RandomAccessFile #BlameBene");
+			e.printStackTrace();
+			return this;
+		}
+		BinaryTreeFile newTree = new BinaryTreeFile(new File(tree.getParentFile(), name), NAME_SIZE);
+		try {
+			for (int i = 0; i < raf.length() / DATA_SIZE; i++) {
+				String tag = getTagAtPosition(i);
+				if (tag != null && tag.length() != 0 && !tag.equals(Constants.DELETE_SYMBOL)) {
+					String nameTag = getNameAtPosition(i);
+					if (nameTag != null && nameTag.length() != 0)
+						newTree.add(Integer.parseInt(tag, Character.MAX_RADIX), nameTag);
+				}
+			}
+		} catch (IOException e) {
+			Logger.getInstance().log("Error BTF25: Could not get the file length! #BlameBene");
+			e.printStackTrace();
+			return this;
+		}
+		return newTree;
 	}
 
 }
