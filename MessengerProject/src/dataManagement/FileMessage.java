@@ -6,8 +6,8 @@ public class FileMessage extends Message{
 
 	private File content;
 
-	public FileMessage(String date, long pointerFrom, long pointerTo) {
-		super(date, pointerFrom, pointerTo);
+	public FileMessage(String date, int from, int to) {
+		super(date, from, to);
 	}
 
 	void setContent(File content) {

@@ -7,7 +7,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Scanner;
 
 public class TestingTesting123 {
@@ -185,7 +187,7 @@ public class TestingTesting123 {
 			"Twist-a-loo", "Twist", "Peppermint Twist", "Waterfire", "Zecora" };
 
 	enum WhatToDo {
-		REGISTER_USER, STESS_USER, LOGIN_USER, DATE, STRESS_DATE, TESTING, DELETE_FROM_TREE, STRESS_GROUP, REGISTER_GROUP, GET_GROUP, DELETE_GROUP;
+		REGISTER_USER, STESS_USER, LOGIN_USER, DATE, STRESS_DATE, TESTING, DELETE_FROM_TREE, STRESS_GROUP, REGISTER_GROUP, GET_GROUP, DELETE_GROUP, STRESS_MESSAGES_FOR_TAG_1_10, GET_MESSAGES;
 	}
 
 	@SuppressWarnings("static-access")
@@ -289,9 +291,6 @@ public class TestingTesting123 {
 				br.close();
 			}
 			break;
-		case STRESS_DATE:
-
-			break;
 		case DELETE_GROUP:
 			System.out.print("exit?: ");
 			while (!scan.nextLine().equals("exit")) {
@@ -348,6 +347,17 @@ public class TestingTesting123 {
 				}
 				System.out.println(dm.createGroup(rngNames.get(i), arr));
 			}
+			break;
+		case STRESS_MESSAGES_FOR_TAG_1_10:
+			for (int tag = 1; tag < 11; tag++) {
+				ArrayList<Date> dates = new ArrayList<>();
+				Calendar cal = Calendar.getInstance();
+				cal.setTime(new Date());
+				// TODO
+			}
+			break;
+		case GET_MESSAGES:
+			//TODO
 			break;
 		default:
 			System.err.println("Maybe not yet implemented? #BlameBene");

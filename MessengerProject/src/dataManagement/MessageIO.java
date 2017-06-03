@@ -10,15 +10,9 @@ import server.Constants;
 public class MessageIO {
 
 	private RandomAccessFile raf;
-	private final Object lock = new Object();
-	private String date;
-	private File dir;
 
-	MessageIO(String date, File messagesDir) {
-		this.date = date;
-		dir = new File(messagesDir, date);
-		dir.mkdirs();
-		File randomAccessFile = new File(dir, "raf.txt");
+	MessageIO(File file) {
+		File randomAccessFile = new File(file, "raf.txt");
 		try {
 			randomAccessFile.createNewFile();
 		} catch (IOException e1) {
@@ -123,24 +117,15 @@ public class MessageIO {
 		return msg;
 	}
 
-	void close() {
+	boolean close() {
 		try {
 			raf.close();
 		} catch (IOException e) {
 			Logger.getInstance().log("Error MIO10: Could not close! #BlameBene");
 			e.printStackTrace();
+			return false;
 		}
+		return true;
 	}
 
-	Object getLock() {
-		return lock;
-	}
-
-	String getDate() {
-		return date;
-	}
-
-	File getDir() {
-		return dir;
-	}
 }

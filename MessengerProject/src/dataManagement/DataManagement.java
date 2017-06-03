@@ -12,7 +12,7 @@ public class DataManagement {
 	 */
 	private ArgumentRandomAccessFile usersArgument;
 	private BinaryTreeFile usersTree;
-	private FriendList friendList;
+	private FriendList friendList, usersGroupList;
 	private File userDir;
 
 	/**
@@ -22,6 +22,8 @@ public class DataManagement {
 	private BinaryTreeFile groupTree;
 	private GroupList groupList;
 	private File groupDir;
+
+	private MessageDirector messageDirector;
 
 	private DeviceDates devicesDates;
 	private final Object usersLock = new Object(), dateLock = new Object(), groupLock = new Object();
@@ -55,11 +57,14 @@ public class DataManagement {
 		usersArgument = new ArgumentRandomAccessFile(new File(userDir, "arguments.txt"), Constants.MAX_USERNAME_SIZE,
 				Constants.MAX_PASSWORD_SIZE);
 		usersTree = new BinaryTreeFile(new File(userDir, "binaryTree.txt"), Constants.MAX_USERNAME_SIZE);
-		friendList = new FriendList(new File(userDir, "list.txt"));
+		friendList = new FriendList(new File(userDir, "friendlist.txt"));
+		usersGroupList = new FriendList(new File(userDir, "grouplist.txt"));
 
 		groupArguments = new ArgumentRandomAccessFile(new File(groupDir, "arguments.txt"), Constants.MAX_GROUP_NAME);
 		groupTree = new BinaryTreeFile(new File(groupDir, "tree.txt"), Constants.MAX_GROUP_NAME);
 		groupList = new GroupList(new File(groupDir, "list.txt"));
+
+		messageDirector = new MessageDirector(saveDirectory);
 
 		devicesDates = new DeviceDates(saveDirectory);
 
@@ -100,6 +105,7 @@ public class DataManagement {
 					int tag = usersArgument.add(username, password);
 					usersTree.add(tag, username);
 					friendList.make(tag);
+					usersGroupList.make(tag);
 					return tag;
 				}
 			}
@@ -245,8 +251,12 @@ public class DataManagement {
 				int tag = groupTree.getTag(name);
 				if (tag == -1) {
 					tag = groupArguments.add(name);
-					if (groupTree.add(tag, name) && groupList.make(tag, tags))
+					if (groupTree.add(tag, name) && groupList.make(tag, tags)) {
+						for (int i = 0; i < tags.length; i++) {
+							usersGroupList.addFriend(tags[i], -tag);
+						}
 						return -tag;
+					}
 				}
 			}
 		}
@@ -264,11 +274,16 @@ public class DataManagement {
 	public boolean deleteGroup(int userTag, int groupTag) {
 		synchronized (groupLock) {
 			groupTag = -groupTag;
-			System.out.println(userTag + " " + groupTag);
-			if (userTag > 0 && groupTag > 0) {
-				if (groupList.getAdmin(groupTag) == userTag && groupList.deleteGroup(groupTag)) {
+			if (userTag > 0 && groupTag > 0 && groupList.getAdmin(groupTag) == userTag) {
+				int[] tags = groupList.getTags(groupTag);
+				if (tags != null && groupList.deleteGroup(groupTag)) {
 					String groupName = groupArguments.getArgument(groupTag, 0);
-					return groupName != null && groupArguments.remove(groupTag) && groupTree.delete(groupName);
+					if (groupName != null && groupArguments.remove(groupTag) && groupTree.delete(groupName)) {
+						for (int i = 0; i < tags.length; i++) {
+							usersGroupList.deleteFriend(tags[i], groupTag);
+						}
+						return true;
+					}
 				}
 			}
 			return false;
@@ -310,15 +325,33 @@ public class DataManagement {
 		}
 	}
 
+	/**
+	 * Removes a user from a group. Returns wheter it successeded or not.
+	 *
+	 * @param userTag
+	 *            The Tag of the user that should be kicked
+	 * @param groupTag
+	 *            The Tag of the group
+	 * @return
+	 */
 	public boolean removeFromGroup(int userTag, int groupTag) {
 		synchronized (groupLock) {
 			groupTag = -groupTag;
-			if (userTag > 0 && groupTag > 0)
-				return groupList.deleteMember(groupTag, userTag);
+			if (userTag > 0 && groupTag > 0 && groupList.deleteMember(groupTag, userTag)) {
+				usersGroupList.deleteFriend(userTag, groupTag);
+				return true;
+			}
 			return false;
 		}
 	}
 
+	/**
+	 * Gets an Admin of a group. Returns 0 if no group has been found!
+	 *
+	 * @param groupTag
+	 *            The tag of the group
+	 * @return
+	 */
 	public int getGroupAdmin(int groupTag) {
 		synchronized (groupLock) {
 			groupTag = -groupTag;
@@ -326,6 +359,12 @@ public class DataManagement {
 				return groupList.getAdmin(groupTag);
 			return 0;
 		}
+	}
+
+	public synchronized int[] getGroupTags(int tag) {
+		if (tag > 0)
+			return usersGroupList.getFriends(tag);
+		return null;
 	}
 
 	/**
@@ -345,6 +384,7 @@ public class DataManagement {
 	 * day!
 	 */
 	private void checkForDelete() {
+		messageDirector.addDay();
 		// TODO
 	}
 
@@ -358,12 +398,16 @@ public class DataManagement {
 	 * @param toTag
 	 *            To whom the message is sent
 	 * @param date
-	 *            Date with Format YYYYMMddHHmmss - DeviceDate in DeviceCalc
+	 *            Date with Format YYYYMMddHHmmss - DeviceDate in DateCalc
 	 * @param message
 	 *            The sent message
 	 */
-	public void saveMessage(int fromTag, int toTag, String date, String message) {
-		//TODO
+	public boolean saveMessage(int fromTag, int toTag, String date, String message) {
+		if (fromTag > 0 && toTag != 0 && date != null && date.length() == 14 && message != null
+				&& message.length() != 0) {
+			return messageDirector.writeMessage(date, fromTag, toTag, message);
+		}
+		return false;
 	}
 
 	/**
@@ -378,12 +422,15 @@ public class DataManagement {
 	 * @param toTag
 	 *            To whom the message is sent
 	 * @param date
-	 *            Date with Format YYYYMMddHHmmss - DeviceDate in DeviceCalc
+	 *            Date with Format YYYYMMddHHmmss - DeviceDate in DateCalc
 	 * @param file
 	 *            The sent file
 	 */
-	public void saveFile(int fromTag, int toTag, String date, String file) {
-		// TODO
+	public boolean saveFile(int fromTag, int toTag, String date, String file) {
+		if (fromTag > 0 && toTag != 0 && date != null && date.length() == 14 && file != null && file.length() != 0) {
+			return messageDirector.writeFile(date, fromTag, toTag, file);
+		}
+		return false;
 	}
 
 	/**
@@ -392,7 +439,10 @@ public class DataManagement {
 	 * date that is given back in the DeviceLogin!
 	 */
 	public Mailbox getMessages(int tag, String date) {
-		// TODO
+		if (tag > 0 && date != null && date.length() != 0) {
+			int[] groupTags = getGroupTags(tag);
+			return messageDirector.getMessages(tag, date, groupTags);
+		}
 		return null;
 	}
 

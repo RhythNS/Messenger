@@ -4,12 +4,11 @@ public abstract class Message {
 
 	int from, to;
 	String date;
-	long pointerFrom, pointerTo;
 
-	public Message(String date, long pointerFrom, long pointerTo) {
+	public Message(String date, int from, int to) {
 		this.date = date;
-		this.pointerFrom = pointerFrom;
-		this.pointerTo = pointerTo;
+		this.from = from;
+		this.to = to;
 	}
 
 	public int getFrom() {
