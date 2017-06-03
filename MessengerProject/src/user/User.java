@@ -11,7 +11,7 @@ public class User {
 	private String username;
 	private String private_key;
 	private ArrayList<Contact> friendlist;
-	private ArrayList<Group> Groups;
+	private ArrayList<Group> groups;
 	private Client client;
 	private int deviceNumber;
 	public FileOutputStream fos;
@@ -21,14 +21,14 @@ public class User {
 		this.username = name;
 	}
 
-	public ArrayList<Chat> getAllChats(){
+	public ArrayList<Chat> getAllChats() {
 		return null;
 	}
-	
+
 	public void setDeviceNumber(int nr) {
 		this.deviceNumber = nr;
 	}
-	
+
 	/*
 	 * request friendship, "recieve" friendlist, remove friend, accept friend
 	 * 
@@ -36,20 +36,25 @@ public class User {
 	 * 
 	 * Alles was empfangen wird benötigt Methode
 	 */
-	
+
 	public boolean replyFriendRequest(int tag, boolean accept) {
-		if (accept){
+		if (accept) {
+			System.out.println("You've got a new friend");
 			return friendlist.add(new Contact(username, tag));
+
 		}
+		System.out.println("Friendship declined");
 		return accept;
 	}
 
 	public void requestFriendship(int tag, String username) {
-		
+		// if(client.sendFriendRequest(tag){
+
+		// }
 	}
 
-	public void recieveFriendlist(ArrayList<Contact>friendlist) {
-		this.friendlist=friendlist;
+	public void recieveFriendlist(ArrayList<Contact> friendlist) {
+		this.friendlist = friendlist;
 	}
 
 	public boolean removeFriend(int tag) {
@@ -59,6 +64,7 @@ public class User {
 		}
 		return false;
 	}
+
 	public Contact searchUserInFriendlist(int tag) {
 		for (Contact c : friendlist) {
 			if (c.getTag() == tag) {
@@ -72,7 +78,8 @@ public class User {
 	public ArrayList<Contact> getFriendlist() {
 		return friendlist;
 	}
-//	Anmeldung&Registrierung
+
+	// Anmeldung&Registrierung
 	public boolean register(String username, String password) throws IOException {
 		int result = client.register(username, password);
 		if (result == -1) {
@@ -84,30 +91,47 @@ public class User {
 		return true;
 	}
 
-	public boolean login(String username, String password) {
-		try {
-			return client.login(tag, password,deviceNumber);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return false;
+	public boolean login(String username, String password) throws IOException {
+		loadMessages();
+		return client.login(tag, password, deviceNumber);
 	}
-//	Kommunikation
+
+	private void loadMessages() {
+		// ersten 10 Chats und Nachrichten laden
+	}
+
+	// Kommunikation
 	public void sendMassage(String message, int tag) {
 		client.writeMessage(tag, message);
 	}
 
 	public void messageRecieved(int empf, int sender, String message, Date date) {
-		if (sender == tag) {
-			// eigene Nachricht -> nach empf ordnen
-		}
-		if (empf < 0) {
-
-			// gruppe
-
-		}
-		if (empf > 0) {
-
+		if (sender == tag && empf > 0) {
+			// Nachricht an Kontakt
+			Contact c = searchUserInFriendlist(empf);
+			c.getChat().addMessage(empf, sender, message, date);
+			// eigene Nachrichten vor dem Abschicken anzeigen?
+		} else {
+			if (sender == tag && empf < 0) {
+				// Nachricht an Gruppe
+				Group g = searchGroupInGrouplist(empf);
+				g.getChat().addMessage(empf, sender, message, date);
+			} else {
+				if (sender > 0 && empf == tag) {
+					// Nachricht von Kontakt
+					Contact c = searchUserInFriendlist(sender);
+					c.getChat().addMessage(empf, sender, message, date);
+				} else {
+					if (sender != tag && empf < 0) {
+						// Nachricht von Gruppe
+						Group g = searchGroupInGrouplist(empf);
+						g.getChat().addMessage(empf, sender, message, date);
+						// Welchen Tag hat Empf wenn an Gruppe?
+					} else {
+						System.err.println("Fatal Error #BlameBenós");
+					}
+				}
+			}
 		}
 
 	}
@@ -125,43 +149,91 @@ public class User {
 		}
 	}
 
-	//Gruppen Zeug
-
-	public void groupInvite(int groupTag, String groupName) {
+	public ArrayList<Message> getOwnMessages(Contact c, int messageCount) {
+		ArrayList<Message> ownMessages = new ArrayList<Message>();
+		for (Message m : c.getChat().getMessages(messageCount)) {
+			if (m.sender == tag) {
+				ownMessages.add(m);
+			}
+		}
+		return ownMessages;
 	}
 
-	public void promoteGroupLeader(int groupTag) {
+	public ArrayList<Message> getContactMessages(Contact c, int messageCount) {
+		ArrayList<Message> ownMessages = new ArrayList<Message>();
+		for (Message m : c.getChat().getMessages(messageCount)) {
+			if (m.sender == c.getTag()) {
+				ownMessages.add(m);
+			}
+		}
+		return ownMessages;
+	}
+	// Gruppen Zeug
+
+	public void groupInvite(int groupTag, String groupName, ArrayList<Contact> groupList) {
+		Group g = new Group(groupName, groupList);
+		groups.add(g);
 	}
 
-	public void kickGroupMember(int groupTag) {
+	public boolean promoteGroupLeader(int groupTag, int tag) {
+		Group g = searchGroupInGrouplist(tag);
+		Contact a = searchUserInGroup(tag, g);
+		if (g != null && a != null) {
+			g.setAdmin(a);
+			return true;
+		}
+		System.err.println("User or group not found!");
+		return false;
 	}
-	
+
+	public void kickGroupMember(int groupTag, int tag) {
+		// Permission check??
+		Group g = searchGroupInGrouplist(tag);
+		Contact a = searchUserInGroup(tag, g);
+		if (g != null && a != null) {
+			g.kickUser(tag);
+		}
+		System.err.println("User or group not found!");
+	}
+
+	public Group searchGroupInGrouplist(int tag) {
+		for (Group g : groups) {
+			if (g.getTag() == tag) {
+				return g;
+			}
+		}
+		System.err.println("Group not found in your Grouplist #BlameBenós");
+		return null;
+	}
+
+	public Contact searchUserInGroup(int tag, Group g) {
+		for (Contact c : g.getGroupList()) {
+			if (c.getTag() == tag) {
+				return c;
+			}
+		}
+		System.err.println("User not found in Group");
+		return null;
+	}
+
 	public boolean löschenGroup(Group Group) {
-		if (Groups.contains(Group)) {
-			return Groups.remove(Group);
+		if (groups.contains(Group)) {
+			return groups.remove(Group);
 		}
 		System.out.println("Group doesn't exsist #BlameBenós");
 		return false;
 	}
 
-	public boolean GroupUmbenennen(Group Group, String neuerName) {
-		if (!(Group == null || neuerName == null)) {
-			for (Group eineGroup : Groups) {
-				if (eineGroup.getGroupName().equals(Group.getGroupName())) {
-					Group.setGroupName(neuerName);
-					return true;
-				}
-			}
-			System.err.println("Group doesn't exsist");
-			return false;
-		} else {
-			System.err.println("Type in Groupname");
+	public boolean GroupUmbenennen(int tag, String neuerName) {
+		Group result = searchGroupInGrouplist(tag);
+		if (result != null) {
+			result.setGroupName(neuerName);
 		}
 		return false;
 	}
-	
-	/*TODO 
-	 * NACHRICHTEN-Management 
+
+	/*
+	 * TODO NACHRICHTEN-Management
 	 * 
 	 */
 }

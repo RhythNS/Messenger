@@ -4,16 +4,21 @@ import java.util.ArrayList;
 
 public class Group {
 
+	
+	//TODO publicKey and Tag?
+	
 	private String publicKey;
 	private int tag;
 	private String groupName;
 	private Contact admin;
-	private ArrayList<Contact> contacts;
+	private ArrayList<Contact> groupList;
 	private Chat chat;
 	
-	public Group(String groupName,ArrayList<Contact> contacts){
-		this.admin=contacts.get(0);
-		
+	public Group(String groupName,ArrayList<Contact> groupList){
+		this.groupName=groupName;
+		this.admin=groupList.get(0);
+		this.groupList=groupList;
+		this.chat=new Chat(this);
 	}
 
 	public String getGroupName() {
@@ -40,9 +45,17 @@ public class Group {
 	public void setAdmin(Contact admin) {
 		this.admin = admin;
 	}
-	public ArrayList<Contact> getContacts() {
-		return contacts;
+	public ArrayList<Contact> getGroupList() {
+		return groupList;
 	}
-
-
+	public Chat getChat() {
+		return chat;
+	}
+	public void kickUser(int tag){
+		for (Contact c : groupList) {
+			if(c.getTag()==tag){
+				groupList.remove(c);
+			}
+		}
+	}
 }

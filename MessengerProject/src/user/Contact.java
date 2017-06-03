@@ -27,7 +27,4 @@ public class Contact {
 	public void setChat(Chat chat) {
 		this.chat = chat;
 	}
-	public void updateChat(Message m){
-		
-	}
 }
