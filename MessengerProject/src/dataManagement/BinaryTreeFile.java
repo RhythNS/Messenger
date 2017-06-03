@@ -73,19 +73,23 @@ public class BinaryTreeFile {
 			}
 			int result = sb.toString().compareTo(name);
 			if (result == 0) {
-				if (getTagAtPosition(atPosition).equals(Constants.DELETE_SYMBOL)) {
+				String s = getTagAtPosition(atPosition);
+				if (s == null || s.length() == 0) {
+					Logger.getInstance().log("Error BT24: String was null or a length of 0! #BlameBene");
+					return false;
+				}
+				if (s.charAt(0) == Constants.DELETE_SYMBOL) {
 					try {
-						raf.seek(atPosition * DATA_SIZE + NAME_SIZE + POINTER_SIZE * 2);
+						raf.seek(atPosition * DATA_SIZE + NAME_SIZE);
 					} catch (IOException e) {
 						Logger.getInstance().log("Error BTF21: Could not seek! #BlameBene");
 						e.printStackTrace();
 						return false;
 					}
-					sb = new StringBuilder();
 					String toWrite = Integer.toString(tag, Character.MAX_RADIX);
 					for (int i = 0; i < toWrite.length(); i++) {
 						try {
-							raf.write(sb.charAt(i));
+							raf.write(toWrite.charAt(i));
 						} catch (IOException e) {
 							Logger.getInstance().log("Error BTF22: Could not write #BlameBene");
 							e.printStackTrace();
@@ -224,9 +228,10 @@ public class BinaryTreeFile {
 			} catch (IOException e) {
 				Logger.getInstance().log("Error BTF26: Could not write #BlameBene");
 				e.printStackTrace();
+				return false;
 			}
 		}
-		return false;
+		return true;
 	}
 
 	/**
@@ -284,15 +289,19 @@ public class BinaryTreeFile {
 			}
 			int result = sb.toString().compareTo(name);
 			if (result == 0) { // Get the tag
+				String res = getTagAtPosition(atPosition);
 				try {
-					raf.seek(atPosition * DATA_SIZE + POINTER_SIZE * 2);
+					raf.seek(atPosition * DATA_SIZE + NAME_SIZE);
 				} catch (IOException e) {
 					Logger.getInstance().log("Error BTF26: Could not seek! #BlameBene");
 					e.printStackTrace();
 					return -2;
 				}
-				String res = getTagAtPosition(atPosition);
-				return res == null ? -2 : (int) Long.parseLong(res, Character.MAX_RADIX);
+				if (res == null || res.length() == 0)
+					return -2;
+				if (res.charAt(0) == Constants.DELETE_SYMBOL)
+					return -1;
+				return (int) Long.parseLong(res, Character.MAX_RADIX);
 			} else if (result < 0) { // For example res = A, name = Z
 				atPosition = seekAt(atPosition * DATA_SIZE + NAME_SIZE + POINTER_SIZE * 1);
 			} else { // For example res = Z, name = A
@@ -388,7 +397,7 @@ public class BinaryTreeFile {
 		try {
 			for (int i = 0; i < raf.length() / DATA_SIZE; i++) {
 				String tag = getTagAtPosition(i);
-				if (tag != null && tag.length() != 0 && !tag.equals(Constants.DELETE_SYMBOL)) {
+				if (tag != null && tag.length() != 0 && tag.charAt(0) != Constants.DELETE_SYMBOL) {
 					String nameTag = getNameAtPosition(i);
 					if (nameTag != null && nameTag.length() != 0)
 						newTree.add(Integer.parseInt(tag, Character.MAX_RADIX), nameTag);

@@ -37,11 +37,9 @@ public class ListFiles {
 		}
 		long toMake = tag * BYTES_PER_USER;
 		if (toMake < length) {
-			Logger.getInstance()
-					.log("Error LF2: Tag is already registerd or is just wrong! Tag: (" + tag + ") #BlameBene");
-			return false;
+			return true;
 		}
-		if (toMake + 1 > length + BYTES_PER_USER)
+		if (toMake - BYTES_PER_USER - 1 > length)
 			Logger.getInstance().log(
 					"Notice LF0: Making more tags than is should be! (" + length / BYTES_PER_USER + ") #BlameBene");
 		for (long i = length; i < toMake; i++) {
@@ -206,19 +204,5 @@ public class ListFiles {
 		return set(tag, 0, tagS) && set(tag, pointer, prevAdmin);
 	}
 
-	public static void main(String[] args) {
-		File saveDirectory = new File(System.getProperty("user.dir") + "/MessengerSaves/test.txt");
-		ListFiles lf = new ListFiles(6, 4, saveDirectory);
-		for (int i = 0; i < 2000; i++) {
-			lf.make(i);
-			for (int j = 0; j < 6; j++) {
-				lf.set(i, j, (int) (Math.random() * 9999) + "");
-			}
-		}
-		System.out.println(lf.get(0, 3));
-		System.out.println(lf.get(234, 4));
-		System.out.println(lf.get(987, 1));
-		System.out.println(Arrays.toString(lf.getAll(80)));
-	}
 
 }

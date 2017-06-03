@@ -2,6 +2,7 @@ package dataManagement;
 
 import java.io.File;
 import java.time.LocalTime;
+
 import server.Constants;
 
 public class DataManagement {
@@ -260,9 +261,10 @@ public class DataManagement {
 	 * @param groupTag
 	 *            The Tag from the group
 	 */
-	public boolean delteGroup(int userTag, int groupTag) {
+	public boolean deleteGroup(int userTag, int groupTag) {
 		synchronized (groupLock) {
 			groupTag = -groupTag;
+			System.out.println(userTag + " " + groupTag);
 			if (userTag > 0 && groupTag > 0) {
 				if (groupList.getAdmin(groupTag) == userTag && groupList.deleteGroup(groupTag)) {
 					String groupName = groupArguments.getArgument(groupTag, 0);
@@ -283,7 +285,7 @@ public class DataManagement {
 	public int[] getGroupMembers(int groupTag) {
 		synchronized (groupLock) {
 			groupTag = -groupTag;
-			if (groupTag < 0)
+			if (groupTag > 0)
 				return groupList.getTags(groupTag);
 			return null;
 		}
@@ -314,6 +316,15 @@ public class DataManagement {
 			if (userTag > 0 && groupTag > 0)
 				return groupList.deleteMember(groupTag, userTag);
 			return false;
+		}
+	}
+
+	public int getGroupAdmin(int groupTag) {
+		synchronized (groupLock) {
+			groupTag = -groupTag;
+			if (groupTag > 0)
+				return groupList.getAdmin(groupTag);
+			return 0;
 		}
 	}
 

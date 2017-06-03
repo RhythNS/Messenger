@@ -9,7 +9,7 @@ import server.Constants;
 
 public class ArgumentRandomAccessFile {
 
-	private RandomAccessFile raf;
+	private RandomAccessFile raf, traf;
 	private final long BYTES_PER_USER;
 	private final int[] arguments;
 
@@ -25,6 +25,14 @@ public class ArgumentRandomAccessFile {
 		} catch (FileNotFoundException e) {
 			Logger.getInstance().log("Error U0: Could not init the RandomAccessFile! #BlameBene");
 			new FileException(file);
+		}
+		File trafFile = new File(file.getParentFile(), "deletedTags.txt");
+		try {
+			traf = new RandomAccessFile(trafFile, "rw");
+		} catch (FileNotFoundException e) {
+			Logger.getInstance().log("Error U12: Could not init the Traf! #BlameBene");
+			e.printStackTrace();
+			new FileException(trafFile);
 		}
 	}
 
@@ -93,10 +101,33 @@ public class ArgumentRandomAccessFile {
 				sb.append(Constants.FILLER);
 			}
 		}
+		int tag = 0;
 		try {
-			raf.seek(raf.length());
-		} catch (IOException e) {
-			e.printStackTrace();
+			if (traf.length() == 0) {
+				try {
+					raf.seek(raf.length());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			} else {
+				StringBuilder sb2 = new StringBuilder();
+				long i;
+				for(i = traf.length() - 2; i > -1; i--) {
+					traf.seek(i);
+					char input = (char) traf.read();
+					if(input == Constants.SEPERATOR)
+						break;
+					sb2.append(input);
+				}
+				tag = Integer.parseInt(sb2.reverse().toString(), Character.MAX_RADIX);
+				raf.seek(tag * BYTES_PER_USER);
+				if (i == 0)
+					i--;
+				traf.setLength(i + 1);
+			}
+		} catch (IOException e1) {
+			Logger.getInstance().log("Error U15: Could not get traf length, setsize or read! #BlameBene");
+			e1.printStackTrace();
 		}
 		for (int i = 0; i < sb.length(); i++) {
 			try {
@@ -108,7 +139,7 @@ public class ArgumentRandomAccessFile {
 			}
 		}
 		try {
-			return (int) (raf.length() / BYTES_PER_USER);
+			return tag == 0 ? (int) (raf.length() / BYTES_PER_USER) : tag;
 		} catch (IOException e) {
 			Logger.getInstance().log("Error U7: Could not get length! #BlameBene");
 			e.printStackTrace();
@@ -117,6 +148,24 @@ public class ArgumentRandomAccessFile {
 	}
 
 	boolean remove(int tag) {
+		try {
+			traf.seek(traf.length());
+		} catch (IOException e1) {
+			Logger.getInstance().log("Error U13: Could not seek! #BlameBene");
+			e1.printStackTrace();
+			return false;
+		}
+		String sTag = Integer.toString(tag, Character.MAX_RADIX);
+		try {
+			for (int i = 0; i < sTag.length(); i++) {
+				traf.write(sTag.charAt(i));
+			}
+			traf.write(Constants.SEPERATOR);
+		} catch (IOException e) {
+			Logger.getInstance().log("Error U14: Could not write! #BlameBene");
+			e.printStackTrace();
+		}
+		tag--;
 		try {
 			raf.seek(BYTES_PER_USER * tag);
 		} catch (IOException e) {
@@ -128,6 +177,7 @@ public class ArgumentRandomAccessFile {
 			try {
 				raf.write(Constants.FILLER);
 			} catch (IOException e) {
+				Logger.getInstance().log("Error U11: Could not write! #BlameBene");
 				e.printStackTrace();
 				return false;
 			}
@@ -136,10 +186,11 @@ public class ArgumentRandomAccessFile {
 	}
 
 	boolean exists(int tag) {
+		tag--;
 		try {
 			raf.seek(BYTES_PER_USER * tag);
 		} catch (IOException e) {
-		Logger.getInstance().log("Error U9: Could not seek! #BlameBene");
+			Logger.getInstance().log("Error U9: Could not seek! #BlameBene");
 			e.printStackTrace();
 			return false;
 		}

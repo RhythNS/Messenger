@@ -19,6 +19,6 @@ public class Constants {
 
 	public static final char FILLER = '#';
 	public static final char SEPERATOR = ',';
-	public static final char DELETE_SYMBOL = 'D';
+	public static final char DELETE_SYMBOL = '/';
 	public static final int POINTER_SIZE = 6;
 }

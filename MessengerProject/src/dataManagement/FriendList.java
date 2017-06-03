@@ -23,7 +23,8 @@ public class FriendList extends ListFiles {
 	boolean deleteFriend(int tag, int friendTag) {
 		int position = find(tag, Integer.toString(friendTag, Character.MAX_RADIX));
 		if (position == -1) {
-			Logger.getInstance().log("Error FL1: Could not find friend. Story of my life. #BlameBene");
+			Logger.getInstance().log(
+					"Error FL1: Could not find friend. There is probably a joke there. Can't seem to find it though.! #BlameBene");
 			return false;
 		}
 		return set(tag, position, "");
