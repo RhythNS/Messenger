@@ -24,6 +24,13 @@ public class Index {
 		dir.mkdirs();
 
 		indexFile = new File(dir, "index.txt");
+		try {
+			indexFile.createNewFile();
+		} catch (IOException e) {
+			new FileException(indexFile);
+			Logger.getInstance().log("Error I17: Could not make File! #BlameBene");
+			e.printStackTrace();
+		}
 
 		messageIO = new MessageIO(new File(dir, "randomAccessFile.txt"));
 
@@ -48,7 +55,7 @@ public class Index {
 			while (s != null) {
 				String[] arr = s.split(seperator);
 				int tag1 = 0, tag2 = 0;
-				if (DateCalc.isBelow(date, arr[0])) {
+				if (DateCalc.forDayIsBelow(date, arr[0])) {
 					boolean found = (tag1 = Integer.parseInt(arr[1], Character.MAX_RADIX)) == tag
 							|| (tag2 = Integer.parseInt(arr[2], Character.MAX_RADIX)) == tag;
 					for (int i = 0; i < groupTags.length; i++) {
@@ -56,18 +63,20 @@ public class Index {
 							break;
 						found = tag2 == groupTags[i];
 					}
-					if (arr.length == 4) {
-						FileMessage fm = new FileMessage(date, tag1, tag2);
-						fm.setContent(fileManager.getFile(arr[3]));
-						if (fm != null)
-							mb.files.add(fm);
-					} else {
-						TextMessage tm = new TextMessage(date, tag1, tag2);
-						tm.pointerFrom = Long.parseLong(arr[3], Character.MAX_RADIX);
-						tm.pointerTo = Long.parseLong(arr[4], Character.MAX_RADIX);
-						tm = messageIO.read(tm);
-						if (tm != null)
-							mb.messages.add(tm);
+					if (found) {
+						if (arr.length == 4) {
+							FileMessage fm = new FileMessage(this.date + arr[0], tag1, tag2);
+							fm.setContent(fileManager.getFile(arr[3]));
+							if (fm != null)
+								mb.files.add(fm);
+						} else {
+							TextMessage tm = new TextMessage(this.date + arr[0], tag1, tag2);
+							tm.pointerFrom = Long.parseLong(arr[3], Character.MAX_RADIX);
+							tm.pointerTo = Long.parseLong(arr[4], Character.MAX_RADIX);
+							tm = messageIO.read(tm);
+							if (tm != null)
+								mb.messages.add(tm);
+						}
 					}
 				}
 				s = br.readLine();
@@ -101,7 +110,7 @@ public class Index {
 			e.printStackTrace();
 			return false;
 		}
-		long[] values = messageIO.write(fromTag, toTag, message);
+		long[] values = messageIO.write(message);
 		if (values == null) {
 			Logger.getInstance().log("Error I1: Values are null! #BlameBene");
 			try {
@@ -204,6 +213,11 @@ public class Index {
 
 	Object getLock() {
 		return lock;
+	}
+
+	@Override
+	public String toString() {
+		return "Index: " + getDate();
 	}
 
 }

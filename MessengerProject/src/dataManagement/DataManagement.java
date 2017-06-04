@@ -5,8 +5,13 @@ import java.time.LocalTime;
 
 import server.Constants;
 
+/**
+ * The stuff that Noah did <(^_^<
+ * @author RhythNS_
+ */
 public class DataManagement {
 
+	// USER stuff:
 	/**
 	 * Arguments: 0 Username, 1 Password
 	 */
@@ -15,6 +20,7 @@ public class DataManagement {
 	private FriendList friendList, usersGroupList;
 	private File userDir;
 
+	// GROUP stuff:
 	/**
 	 * Aguments: 0: name
 	 */
@@ -26,16 +32,21 @@ public class DataManagement {
 	private MessageDirector messageDirector;
 
 	private DeviceDates devicesDates;
-	private final Object usersLock = new Object(), dateLock = new Object(), groupLock = new Object();
-	private Thread checkForDelete;
 
-	public boolean usersLoggedIn = false;
+	// Locks for SYNC Methods
+	private final Object usersLock = new Object(), dateLock = new Object(), groupLock = new Object(),
+			userGroupLock = new Object();
+
+	// Cleaning variables
+	private Thread checkForDelete;
+	private int daysNotCleaned;
 
 	/**
 	 * Standard Constructor for DataManagement
 	 *
 	 * @param saveDirectory
-	 *            The Directory in which everything will be saved
+	 *            The Directory in which everything will be saved. If null the
+	 *            default directory is used
 	 */
 	public DataManagement(File saveDirectory) {
 		if (saveDirectory == null) {
@@ -90,6 +101,17 @@ public class DataManagement {
 			}
 		});
 		checkForDelete.start();
+		daysNotCleaned = Constants.MINIMAL_DAYS_UNTIL_FILE_CLEANING + 1;
+		cleanFiles();
+	}
+
+	/**
+	 * Informs DataManagment wheter a user is logged in or not. This is done so
+	 * if files need cleaning or are being removed, it is done while there are
+	 * no users logged in
+	 */
+	public void noUsersLoggedIn() {
+		cleanFiles();
 	}
 
 	/**
@@ -105,7 +127,9 @@ public class DataManagement {
 					int tag = usersArgument.add(username, password);
 					usersTree.add(tag, username);
 					friendList.make(tag);
-					usersGroupList.make(tag);
+					synchronized (userGroupLock) {
+						usersGroupList.make(tag);
+					}
 					return tag;
 				}
 			}
@@ -252,8 +276,10 @@ public class DataManagement {
 				if (tag == -1) {
 					tag = groupArguments.add(name);
 					if (groupTree.add(tag, name) && groupList.make(tag, tags)) {
-						for (int i = 0; i < tags.length; i++) {
-							usersGroupList.addFriend(tags[i], -tag);
+						synchronized (userGroupLock) {
+							for (int i = 0; i < tags.length; i++) {
+								usersGroupList.addFriend(tags[i], -tag);
+							}
 						}
 						return -tag;
 					}
@@ -279,8 +305,11 @@ public class DataManagement {
 				if (tags != null && groupList.deleteGroup(groupTag)) {
 					String groupName = groupArguments.getArgument(groupTag, 0);
 					if (groupName != null && groupArguments.remove(groupTag) && groupTree.delete(groupName)) {
-						for (int i = 0; i < tags.length; i++) {
-							usersGroupList.deleteFriend(tags[i], groupTag);
+
+						synchronized (userGroupLock) {
+							for (int i = 0; i < tags.length; i++) {
+								usersGroupList.deleteFriend(tags[i], groupTag);
+							}
 						}
 						return true;
 					}
@@ -338,7 +367,9 @@ public class DataManagement {
 		synchronized (groupLock) {
 			groupTag = -groupTag;
 			if (userTag > 0 && groupTag > 0 && groupList.deleteMember(groupTag, userTag)) {
-				usersGroupList.deleteFriend(userTag, groupTag);
+				synchronized (userGroupLock) {
+					usersGroupList.deleteFriend(userTag, groupTag);
+				}
 				return true;
 			}
 			return false;
@@ -361,9 +392,11 @@ public class DataManagement {
 		}
 	}
 
-	public synchronized int[] getGroupTags(int tag) {
+	public int[] getGroupTags(int tag) {
 		if (tag > 0)
-			return usersGroupList.getFriends(tag);
+			synchronized (userGroupLock) {
+				return usersGroupList.getFriends(tag);
+			}
 		return null;
 	}
 
@@ -380,12 +413,25 @@ public class DataManagement {
 	}
 
 	/**
-	 * Checks if it can delete saved messages and files. Shold be called once a
-	 * day!
+	 * Checks if it can delete saved messages and files. Also adds a day to the
+	 * messageDirector. Shold be called once a day!
 	 */
 	private void checkForDelete() {
 		messageDirector.addDay();
-		// TODO
+		daysNotCleaned++;
+		if (daysNotCleaned > Constants.MAXIMAL_DAYS_UNTIL_FILE_CLEANING)
+			cleanFiles();
+	}
+
+	/**
+	 * Refreshes all files that need cleaning
+	 */
+	private synchronized void cleanFiles() {
+		if (daysNotCleaned > Constants.MINIMAL_DAYS_UNTIL_FILE_CLEANING) {
+			daysNotCleaned = 0;
+			usersTree = usersTree.refresh();
+			groupTree = groupTree.refresh();
+		}
 	}
 
 	/**
@@ -415,7 +461,7 @@ public class DataManagement {
 	 * message. The toTag is to whom the message should be sent. If it is a
 	 * group the toTag is the groupTag. The file can not be null! The file
 	 * should look like this: [HEADER]\n[DATA]. The header contains the name and
-	 * the fileType. The Data contains natrually the data!
+	 * the fileType. The Data contains naturally the data!
 	 *
 	 * @param fromTag
 	 *            From whom the message was sent

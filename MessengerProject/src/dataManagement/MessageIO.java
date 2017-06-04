@@ -5,31 +5,22 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import server.Constants;
 
 public class MessageIO {
 
 	private RandomAccessFile raf;
 
 	MessageIO(File file) {
-		File randomAccessFile = new File(file, "raf.txt");
 		try {
-			randomAccessFile.createNewFile();
-		} catch (IOException e1) {
-			new FileException(randomAccessFile);
-			Logger.getInstance().log("Error MIO1: Could not create a new file! #BlameBene");
-			e1.printStackTrace();
-		}
-		try {
-			raf = new RandomAccessFile(randomAccessFile, "rw");
+			raf = new RandomAccessFile(file, "rw");
 		} catch (FileNotFoundException e) {
-			new FileException(randomAccessFile);
+			new FileException(file);
 			Logger.getInstance().log("Error MIO0: Could not init RandomAccessFile. #BlameBene");
 			e.printStackTrace();
 		}
-		if (randomAccessFile.length() > 0) {
+		if (file.length() > 0) {
 			Logger.getInstance()
-					.log("Notice MIO0: File " + randomAccessFile.getName() + " already has data in it. Writing to the end of it!");
+					.log("Notice MIO0: File " + file.getName() + " already has data in it. Writing to the end of it!");
 			try {
 				raf.seek(raf.length());
 			} catch (IOException e) {
@@ -39,7 +30,7 @@ public class MessageIO {
 		}
 	}
 
-	long[] write(int from, int to, String message) {
+	long[] write(String message) {
 		long pointerFrom;
 		try {
 			pointerFrom = raf.length();
@@ -55,14 +46,9 @@ public class MessageIO {
 			e.printStackTrace();
 			return null;
 		}
-		StringBuilder sb = new StringBuilder();
-		sb.append(Integer.toString(from, Character.MAX_RADIX));
-		sb.append(Constants.SEPERATOR);
-		sb.append(Integer.toString(to, Character.MAX_RADIX));
-		sb.append(Constants.SEPERATOR);
-		for (int i = 0; i < sb.length(); i++) {
+		for (int i = 0; i < message.length(); i++) {
 			try {
-				raf.write(sb.charAt(i));
+				raf.write(message.charAt(i));
 			} catch (IOException e) {
 				Logger.getInstance().log("Error MIO5: Could not write! #BlameBene");
 				e.printStackTrace();
@@ -87,33 +73,17 @@ public class MessageIO {
 			e.printStackTrace();
 			return null;
 		}
-		StringBuilder[] sb = new StringBuilder[3];
-		for (int i = 0; i < sb.length; i++)
-			sb[i] = new StringBuilder();
-
-		int incrementer = 0;
+		StringBuilder sb = new StringBuilder();
 		for (long i = msg.pointerFrom; i < msg.pointerTo + 1; i++) {
 			try {
-				char c = (char) raf.read();
-				if (incrementer < 3 && c == Constants.SEPERATOR) {
-					incrementer++;
-					continue;
-				}
-				sb[incrementer].append(c);
+				sb.append((char)raf.read());
 			} catch (IOException e) {
 				Logger.getInstance().log("Error MIO8: Could not read! #BlameBene");
 				e.printStackTrace();
 				return null;
 			}
 		}
-		if (sb[0].length() == 0 || sb[1].length() == 0 || sb[2].length() == 0) {
-			Logger.getInstance().log("Error MIO9: Something went wrong with getting the messages. Lengths: ( "
-					+ sb[0].length() + "/" + sb[1].length() + "/" + sb[2].length() + ") #BlameBene");
-			return null;
-		}
-		msg.from = Integer.parseInt(sb[0].toString(), Character.MAX_RADIX);
-		msg.to = Integer.parseInt(sb[1].toString(), Character.MAX_RADIX);
-		msg.setContent(sb[2].toString());
+		msg.setContent(sb.toString());
 		return msg;
 	}
 

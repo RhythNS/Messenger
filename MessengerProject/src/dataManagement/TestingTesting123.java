@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Scanner;
 
 public class TestingTesting123 {
@@ -349,15 +348,28 @@ public class TestingTesting123 {
 			}
 			break;
 		case STRESS_MESSAGES_FOR_TAG_1_10:
+			int otherTag;
 			for (int tag = 1; tag < 11; tag++) {
-				ArrayList<Date> dates = new ArrayList<>();
-				Calendar cal = Calendar.getInstance();
-				cal.setTime(new Date());
-				// TODO
+				for (int times = 0; times < 100; times++) {
+					Calendar cal = Calendar.getInstance();
+					int seconds = (int) (Math.random() * 59);
+					int minutes = (int) (Math.random() * 59);
+					int hour = (int) (Math.random() * 23);
+					cal.set(2017, 05, 04, hour, minutes, seconds);
+					do {
+						otherTag = (int) (Math.random() * 10) + 1;
+					} while (otherTag == tag);
+					dm.saveMessage(tag, otherTag, DateCalc.getWholeYear().format(cal.getTime()),
+							TestingTesting123.names[(int) (Math.random() * TestingTesting123.names.length)]);
+				}
 			}
 			break;
 		case GET_MESSAGES:
-			//TODO
+			Mailbox mb = dm.getMessages(1, "20170604200000");
+			for (int i = 0; i < mb.messageSize(); i++) {
+				TextMessage tm = mb.getMessage(i);
+				System.out.println(tm.from + "->" + tm.to + " " + tm.date + ": " + tm.getContent());
+			}
 			break;
 		default:
 			System.err.println("Maybe not yet implemented? #BlameBene");

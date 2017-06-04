@@ -1,5 +1,6 @@
 package dataManagement;
 
+import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -61,6 +62,10 @@ public class DateCalc {
 		return true;
 	}
 
+	public static String getForYearDate() {
+		return forYear.format(new Date());
+	}
+
 	public static String getNextDay(String currentDay) {
 		synchronized (calendarLock) {
 			Calendar cal = Calendar.getInstance();
@@ -74,6 +79,34 @@ public class DateCalc {
 			cal.add(Calendar.DATE, 1);
 			return forYear.format(cal.getTime());
 		}
+	}
+
+	public static String[] sort(File[] files) {
+		String[] retArr = new String[files.length];
+		for (int i = 0; i < files.length; i++) {
+			if (files[i] == null || !files[i].exists()) {
+				Logger.getInstance().log("Error CD4: One File was null or not existent! #BlameBene");
+				return null;
+			}
+			retArr[i] = files[i].getName();
+		}
+		String temp;
+		for (int i = 1; i < files.length; i++) {
+			for (int j = i; j > 0; j--) {
+				try {
+					if (forYear.parse(retArr[j]).compareTo(forYear.parse(retArr[j - 1])) < 0) {
+						temp = retArr[j];
+						retArr[j] = retArr[j - 1];
+						retArr[j - 1] = temp;
+					}
+				} catch (ParseException e) {
+					Logger.getInstance().log("Error CD3: Could not parse the date #BlameBene");
+					e.printStackTrace();
+					return null;
+				}
+			}
+		}
+		return retArr;
 	}
 
 	public static int getLowestDateDevice(String[] strings) {
@@ -95,9 +128,9 @@ public class DateCalc {
 		return number;
 	}
 
-	public static boolean isBelow(String date, String string) {
+	public static boolean forDayIsBelow(String date, String otherDate) {
 		try {
-			return forDay.parse(date).compareTo(forDay.parse(string)) < 0;
+			return forDay.parse(date).compareTo(forDay.parse(otherDate)) < 0;
 		} catch (ParseException e) {
 			Logger.getInstance().log("Error CD2: Could not parse! #BlameBene");
 			e.printStackTrace();
