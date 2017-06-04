@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.PublicKey;
+import java.util.Date;
 
 public class Client implements Runnable{
 
@@ -59,6 +60,7 @@ public class Client implements Runnable{
 			System.err.println("Could not connect!");
 			return false;
 		}
+		/*
 		// TODO Generate public and private Key
 
 		PublicKey userPublicKey = null;
@@ -68,6 +70,7 @@ public class Client implements Runnable{
 		// TODO: generate synchronised Key
 
 		// TODO HASH PASSWORD
+		*/
 		write("LOG", deviceNr+"", tag+","+password);
 		String response = read();
 
@@ -256,13 +259,17 @@ public class Client implements Runnable{
 				switch (getHeader(recieved)) {
 					case "MSG":
 						String fromTo = getInfo(recieved);
-						String[] tags = fromTo.split(",");
-						user.messageRecieved(Integer.parseInt(tags[0]), Integer.parseInt(tags[1]), getMessage(recieved));
+						String[] infos = fromTo.split(",");
+						String[] date = infos[2].split(".");
+						Date d = new Date(Integer.parseInt(date[0]), Integer.parseInt(date[1]), Integer.parseInt(date[2]), Integer.parseInt(date[3]), Integer.parseInt(date[4]), Integer.parseInt(date[5]));
+						user.messageRecieved(Integer.parseInt(infos[0]), Integer.parseInt(infos[1]), getMessage(recieved),d);
 						break;
 					case "DATA":
 						fromTo = getInfo(recieved);
-						tags = fromTo.split(",");
-						FileOutputStream fileOutputStream = user.dataReceived(Integer.parseInt(tags[0]), Integer.parseInt(tags[1]),getMessage(recieved));
+						infos = fromTo.split(",");
+						date = infos[2].split(".");
+						d = new Date(Integer.parseInt(date[0]), Integer.parseInt(date[1]), Integer.parseInt(date[2]), Integer.parseInt(date[3]), Integer.parseInt(date[4]), Integer.parseInt(date[5]));
+						FileOutputStream fileOutputStream = user.dataReceived(Integer.parseInt(infos[0]), Integer.parseInt(infos[1]), getMessage(recieved), d);
 						String info = read();
 						do {
 							byte[] bytes = new byte[1024];
@@ -313,6 +320,13 @@ public class Client implements Runnable{
 						break;
 				}
 			}
+
 		}
+	}
+
+	public static void main(String[] args) throws IOException {
+		User user = new User("Horst");
+		Client client = new Client("localhost", 1234, user);
+		client.login(1256, "password", 5);
 	}
 }

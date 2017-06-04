@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.*?>
 <?import javafx.scene.shape.*?>
 <?import javafx.scene.paint.*?>
 <?import javafx.scene.text.*?>
@@ -18,7 +19,11 @@
         <PasswordField fx:id="password" maxWidth="300.0" promptText="password" />
       <PasswordField fx:id="confirmPassword" maxWidth="300.0" promptText="confirm password" />
       <ColorPicker fx:id="colorPicker" />
+      <Button mnemonicParsing="false" onAction="#confirm" text="confirm" />
         <CheckBox fx:id="remindMe" mnemonicParsing="false" text="remind me" />
-      <Label text="login" textFill="DODGERBLUE" underline="true" />
+      <Label onMouseClicked="#switchToLogin" text="login" textFill="DODGERBLUE" underline="true">
+         <cursor>
+            <Cursor fx:constant="HAND" />
+         </cursor></Label>
     </children>
 </VBox>

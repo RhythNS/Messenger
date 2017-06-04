@@ -1,14 +1,14 @@
 package server;
 
 import dataManagement.DeviceLogin;
+import socketio.ServerSocket;
 import socketio.Socket;
-import user.KeyConverter;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.Key;
-import java.security.PublicKey;
+import java.util.Date;
 
 public class Client implements Runnable {
 
@@ -25,6 +25,7 @@ public class Client implements Runnable {
 	}
 
 	private void authentification(Server server) throws IOException {
+		/*
 		//todo: Generate public and private key
 		PublicKey userPublicKey;
 
@@ -36,7 +37,7 @@ public class Client implements Runnable {
 		//TODO: generate and encrypt synchronised Key
 
 		write("KEY","",key.toString());
-
+		*/
 		String login = read();
 		String[] usernamePassword = getMessage(login).split(",");
 		if (getHeader(login).equals("REG")) {
@@ -110,16 +111,18 @@ public class Client implements Runnable {
 			return false;
 	}
 
-	public void writeMessage(int from, int to, String date, String message) {
+	public void writeMessage(int from, int to, Date date, String message) {
 		synchronized (userLock) {
-			write("MSG", from + "," + to, date + ":" + message);
+			String d = date.getYear() + "." + date.getMonth() + "." + date.getDate() + "." + date.getHours() + "." + date.getMinutes() + "." + date.getSeconds();
+			write("MSG", from + "," + to + "," + d, message);
 		}
 	}
 
-	public boolean sendData(int from, int to, String filename, FileInputStream stream, boolean directConnection) throws IOException {
+	public boolean sendData(int from, int to, Date date, String filename, FileInputStream stream, boolean directConnection) throws IOException {
 		synchronized (userLock) {
 			if (stream.available() <= 1048576 || directConnection) {
-				write("DATA", from + "," + to, filename);
+				String d = date.getYear() + "." + date.getMonth() + "." + date.getDate() + "." + date.getHours() + "." + date.getMinutes() + "." + date.getSeconds();
+				write("DATA", from + "," + to + "," + d, filename);
 				byte[] bytes = new byte[1024];
 				int counter = 0;
 				while (stream.available() > 0) {
@@ -213,5 +216,12 @@ public class Client implements Runnable {
 					break;
 			}
 		}
+	}
+
+	public static void main(String[] args) throws IOException {
+		ServerSocket serverSocket = new ServerSocket(1234);
+		Socket socket = serverSocket.accept();
+		char[] password = {'a', 'A'};
+		Client client = new Client(socket, new Server(password));
 	}
 }

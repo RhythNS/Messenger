@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.*?>
 <?import javafx.scene.text.*?>
 <?import javafx.scene.control.*?>
 <?import java.lang.*?>
@@ -14,7 +15,11 @@
       </Label>
       <TextField fx:id="username" maxWidth="300.0" promptText="username" />
       <PasswordField fx:id="password" maxWidth="300.0" promptText="password" />
+      <Button mnemonicParsing="false" onAction="#confirm" text="confirm" />
       <CheckBox fx:id="remindMe" mnemonicParsing="false" text="remind me" />
-      <Label text="register" textFill="DODGERBLUE" underline="true" />
+      <Label onMouseClicked="#switchToRegister" text="register" textFill="DODGERBLUE" underline="true">
+         <cursor>
+            <Cursor fx:constant="HAND" />
+         </cursor></Label>
    </children>
 </VBox>

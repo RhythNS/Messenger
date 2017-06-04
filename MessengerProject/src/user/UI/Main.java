@@ -9,9 +9,12 @@ import javafx.stage.WindowEvent;
 
 public class Main extends Application {
 
+    private static Stage stage;
+
     @Override
     public void start(Stage primaryStage) throws Exception{
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("pages/mainPage.fxml"));
+        stage = primaryStage;
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("pages/login.fxml"));
 
         Parent root = loader.load();
         primaryStage.setTitle("Messenger");
@@ -22,6 +25,9 @@ public class Main extends Application {
         });
     }
 
+    public static void switchScene(Parent root) {
+        stage.setScene(new Scene(root, 800, 600));
+    }
 
     public static void main(String[] args) {
         launch(args);
