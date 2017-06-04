@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.text.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" spacing="20.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="user.UI.controller.Login">
+   <children>
+      <Label text="LOGIN">
+         <font>
+            <Font size="35.0" />
+         </font>
+      </Label>
+      <TextField fx:id="username" maxWidth="300.0" promptText="username" />
+      <PasswordField fx:id="password" maxWidth="300.0" promptText="password" />
+      <CheckBox fx:id="remindMe" mnemonicParsing="false" text="remind me" />
+      <Label text="register" textFill="DODGERBLUE" underline="true" />
+   </children>
+</VBox>

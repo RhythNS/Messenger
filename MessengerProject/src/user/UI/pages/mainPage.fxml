@@ -5,39 +5,42 @@
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 
-
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="user.UI.controler.MainPage">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="user.UI.controller.MainPage">
    <children>
       <ToolBar prefHeight="40.0" prefWidth="200.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
          <items>
             <TextField fx:id="search" />
          </items>
       </ToolBar>
-      <ToolBar layoutX="200.0" prefHeight="40.0" prefWidth="200.0" AnchorPane.leftAnchor="200.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-      <Separator layoutX="197.0" orientation="VERTICAL" prefHeight="600.0" prefWidth="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="197.0" AnchorPane.topAnchor="0.0" />
+      <ToolBar layoutX="200.0" nodeOrientation="RIGHT_TO_LEFT" prefHeight="40.0" prefWidth="200.0" AnchorPane.leftAnchor="200.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <items>
+            <Button mnemonicParsing="false" text="add Friend" />
+            <Button mnemonicParsing="false" text="new Group" />
+         </items></ToolBar>
+      <Separator layoutX="197.0" orientation="VERTICAL" prefHeight="600.0" prefWidth="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="200.0" AnchorPane.topAnchor="0.0" />
       <ScrollPane layoutY="40.0" prefHeight="200.0" prefWidth="202.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="40.0">
          <content>
             <VBox maxWidth="200.0" prefWidth="200.0">
                <children>
-                  <Label text="Friends">
+                  <Label alignment="CENTER" prefWidth="200.0" text="Friends">
                      <font>
                         <Font size="25.0" />
                      </font>
                   </Label>
                   <VBox fx:id="friends" prefWidth="100.0" />
-                  <Label text="Groups">
+                  <Label alignment="CENTER" prefWidth="200.0" text="Groups">
                      <font>
                         <Font size="25.0" />
                      </font>
                   </Label>
                   <VBox fx:id="groups" prefWidth="100.0" />
-                  <Label text="pending">
+                  <Label alignment="CENTER" prefWidth="200.0" text="pending">
                      <font>
                         <Font size="25.0" />
                      </font>
                   </Label>
                   <VBox fx:id="pending" prefWidth="100.0" />
-                  <Label text="request">
+                  <Label alignment="CENTER" prefWidth="200.0" text="request">
                      <font>
                         <Font size="25.0" />
                      </font>
