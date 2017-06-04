@@ -14,8 +14,8 @@ public class Constants {
 	public static final int DAYS_GET_FOR_NEW_DEVICE_LOGIN = -2;
 
 	public static final int MESSAGES_DAYS_KEPT_IN_DATAMANAGMENT = 14;
-	public static final int MINIMAL_DAYS_UNTIL_FILE_CLEANING = 1;
-	public static final int MAXIMAL_DAYS_UNTIL_FILE_CLEANING = 3;
+	public static final int MINIMAL_DAYS_UNTIL_FILE_CLEANING = 5;
+	public static final int MAXIMAL_DAYS_UNTIL_FILE_CLEANING = 10;
 
 	public static final char FILLER = '#';
 	public static final char SEPERATOR = ',';
