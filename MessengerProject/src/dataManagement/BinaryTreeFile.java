@@ -20,9 +20,6 @@ public class BinaryTreeFile {
 
 		this.tree = tree;
 
-		if (!tree.exists())
-			Logger.getInstance().log("Notice BTF0: BinaryTreeFile does not exists, making one!");
-
 		try {
 			raf = new RandomAccessFile(tree, "rw");
 		} catch (FileNotFoundException e) {
@@ -407,6 +404,12 @@ public class BinaryTreeFile {
 			Logger.getInstance().log("Error BTF25: Could not get the file length! #BlameBene");
 			e.printStackTrace();
 			return this;
+		}
+		try {
+			raf.close();
+		} catch (IOException e) {
+			Logger.getInstance().log("Error BTF26: Could not close the RandomAccessFile! #BlameBene");
+			e.printStackTrace();
 		}
 		return newTree;
 	}

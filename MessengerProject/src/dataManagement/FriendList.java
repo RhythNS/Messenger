@@ -14,7 +14,8 @@ public class FriendList extends ListFiles {
 	boolean addFriend(int tag, int friendTag) {
 		int number = getFirstNull(tag);
 		if (number == -1) {
-			Logger.getInstance().log("Error FL0: Too many friends. What a problem... #BlameBene");
+			Logger.getInstance().log(
+					"Error FL0: Too many friends. There is also a joke there somewhere. Gonne keep searching for it! #BlameBene");
 			return false;
 		}
 		return set(tag, number, Integer.toString(friendTag, Character.MAX_RADIX));
@@ -24,7 +25,7 @@ public class FriendList extends ListFiles {
 		int position = find(tag, Integer.toString(friendTag, Character.MAX_RADIX));
 		if (position == -1) {
 			Logger.getInstance().log(
-					"Error FL1: Could not find friend. There is probably a joke there. Can't seem to find it though.! #BlameBene");
+					"Error FL1: Could not find friend. There is probably a joke there. Can't seem to find it though! #BlameBene");
 			return false;
 		}
 		return set(tag, position, "");

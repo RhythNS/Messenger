@@ -1,13 +1,14 @@
 package dataManagement;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 public class Logger {
 
 	private static Logger instance;
-	private RandomAccessFile logWriter;
+	private BufferedWriter logWriter;
 
 	public static Logger getInstance() {
 		if (instance == null)
@@ -25,8 +26,7 @@ public class Logger {
 			return;
 		}
 		try {
-			logWriter = new RandomAccessFile(new File(f, DateCalc.getLoggerDate() + ".txt"),
-					"rw");
+			logWriter = new BufferedWriter(new FileWriter(new File(f, DateCalc.getLoggerDate() + ".txt")));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -43,9 +43,15 @@ public class Logger {
 		System.out.println(toLog);
 		if (logWriter != null) {
 			try {
-				logWriter.writeBytes(DateCalc.getLoggerDate() + ": " + toLog + System.lineSeparator());
+				logWriter.write(DateCalc.getLoggerDate() + ": " + toLog + System.lineSeparator());
 			} catch (IOException e) {
 				System.err.println("Could not log! #BlameBene");
+				e.printStackTrace();
+			}
+			try {
+				logWriter.flush();
+			} catch (IOException e) {
+				System.err.println("Could not flush! #BlameBene");
 				e.printStackTrace();
 			}
 		}
