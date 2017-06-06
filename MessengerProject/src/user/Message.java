@@ -4,17 +4,17 @@ import java.util.Date;
 
 public class Message implements Comparable<Message>{
 
-	int empfänger;
-	int sender;
+	int receiver;
+	int transmitter;
 	String messageContent;
 	Date date;
 	Message next;
 	Message previous;
 	
 	
-	public Message(int empfänger, int sender,String messageContent,Date date,Message previous){
-		this.empfänger=empfänger;
-		this.sender=sender;
+	public Message(int receiver, int transmitter,String messageContent,Date date,Message previous){
+		this.receiver=receiver;
+		this.transmitter=transmitter;
 		this.messageContent=messageContent;
 		this.date=date;
 		this.previous=previous;
@@ -28,7 +28,7 @@ public class Message implements Comparable<Message>{
 
 	@Override
 	public String toString() {
-		return "Message [empfänger=" + empfänger + ", sender=" + sender + ", messageContent=" + messageContent
+		return "Message [receiver=" + receiver + ", transmitter=" + transmitter + ", messageContent=" + messageContent
 				+ ", date=" + date + "]";
 	}
 	

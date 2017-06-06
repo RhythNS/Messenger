@@ -21,6 +21,14 @@ public class User {
 	private ArrayList<Contact> pendingFriendrequest=new ArrayList<Contact>();
 	private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
+	public ArrayList<Contact> getFriendlist() {
+		return friendlist;
+	}
+
+	public ArrayList<Contact> getPendingFriendrequest() {
+		return pendingFriendrequest;
+	}
+	
 	public User(String name) {
 		this.username = name;
 	}
@@ -29,6 +37,8 @@ public class User {
 		this.deviceNumber = nr;
 	}
 
+	
+	
 	public boolean replyFriendRequest(int tag, boolean reply) {
 		if (reply) {
 			System.out.println("You've got a new friend");
@@ -39,9 +49,9 @@ public class User {
 		return reply;
 	}
 	public boolean getFriendreply(int tag,boolean reply){
-		for (Contact c : pendingFriendrequest) {
+		for (Contact c : getPendingFriendrequest()) {
 			if(tag==c.getTag()){
-				pendingFriendrequest.remove(c);
+				getPendingFriendrequest().remove(c);
 				return friendlist.add(c);
 			}
 		}
@@ -51,11 +61,11 @@ public class User {
 	public void requestFriendship(int tag, String username) {
 		if (tag!=0&&username!=null) {
 			Contact friend=new Contact(username,tag);
-			pendingFriendrequest.add(friend);
+			getPendingFriendrequest().add(friend);
 		}
 	}
 
-	public void recieveFriendlist(ArrayList<Contact> friendlist) {
+	public void receiveFriendlist(ArrayList<Contact> friendlist) {
 		this.friendlist = friendlist;
 	}
 
@@ -75,10 +85,6 @@ public class User {
 		}
 		System.err.println("User not found in Friendlist #BlameBenós");
 		return null;
-	}
-
-	public ArrayList<Contact> getFriendlist() {
-		return friendlist;
 	}
 
 	// Anmeldung&Registrierung
@@ -107,7 +113,7 @@ public class User {
 		client.writeMessage(tag, message);
 	}
 
-	public void messageRecieved(int sender, int empf, String message, String givenDate) {
+	public void messageReceived(int sender, int empf, String message, String givenDate) {
 		Date date=null;
 		try {
 			date = dateFormat.parse(givenDate);
@@ -145,7 +151,8 @@ public class User {
 
 	}
 
-	public FileOutputStream dataRecieved(int send, int empf, String filename,Date date) {
+	public FileOutputStream dataReceived(int send, int empf, String filename,String infos) {
+		
 		return fos;
 	}
 
@@ -161,7 +168,7 @@ public class User {
 	public ArrayList<Message> getOwnMessages(Contact c, int messageCount) {
 		ArrayList<Message> ownMessages = new ArrayList<Message>();
 		for (Message m : c.getChat().getMessages(messageCount)) {
-			if (m.sender == tag) {
+			if (m.transmitter == tag) {
 				ownMessages.add(m);
 			}
 		}
@@ -171,7 +178,7 @@ public class User {
 	public ArrayList<Message> getContactMessages(Contact c, int messageCount) {
 		ArrayList<Message> ownMessages = new ArrayList<Message>();
 		for (Message m : c.getChat().getMessages(messageCount)) {
-			if (m.sender == c.getTag()) {
+			if (m.transmitter == c.getTag()) {
 				ownMessages.add(m);
 			}
 		}

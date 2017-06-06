@@ -461,7 +461,7 @@ public class Client implements Runnable{
 	private void dataReceived(String received) {
 		String fromTo = getInfo(received);
 		String[] infos = fromTo.split(",");
-		FileOutputStream fileOutputStream = user.dataRecieved(Integer.parseInt(infos[0]), Integer.parseInt(infos[1]), getMessage(received), infos[2]);
+		FileOutputStream fileOutputStream = user.dataReceived(Integer.parseInt(infos[0]), Integer.parseInt(infos[1]), getMessage(received), infos[2]);
 		String info = read();
 		do {
 			byte[] bytes = new byte[Integer.parseInt(getInfo(info))];
