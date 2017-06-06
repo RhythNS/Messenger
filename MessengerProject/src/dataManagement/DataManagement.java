@@ -169,6 +169,26 @@ public class DataManagement {
 	}
 
 	/**
+	 * Gets a color of a user. Can be null if an error occurred or tag was not
+	 * found!
+	 *
+	 * @param tag
+	 *            The requested tag
+	 * @return the color can be null
+	 */
+	public String getColor(int tag) {
+		if (tag > 0)
+			synchronized (usersLock) {
+				String arg = usersArgument.getArgument(tag, 2);
+				if (arg == null)
+					return null;
+				int value = Integer.parseInt(arg, Character.MAX_RADIX);
+				return Integer.toHexString(value);
+			}
+		return null;
+	}
+
+	/**
 	 * Logout needs to be called when a Device logs itself out or looses
 	 * connection!
 	 *
@@ -518,24 +538,26 @@ public class DataManagement {
 				int[] tags = getGroupMembers(groupTags[i]);
 				mb.groupTransfers.add(new GroupTransfer(groupTags[i], tags));
 			}
-			int[] tags = pendingList.getFriends(tag);
-			if (tags != null)
-				for (int i = 0; i < tags.length; i++)
-					mb.pending.add(tags[i]);
-			tags = requestList.getFriends(tag);
-			if (tags != null)
-				for (int i = 0; i < tags.length; i++)
-					mb.requests.add(tags[i]);
-			tags = friendList.getFriends(tag);
-			if (tags != null)
-				for (int i = 0; i < tags.length; i++) {
-					mb.friends.add(tags[i]);
-					String color = usersArgument.getArgument(tags[i], 2);
-					if (color == null)
-						continue;
-					int col = Integer.parseInt(color, Character.MAX_RADIX);
-					mb.colors.add(new ColorTransfer(Integer.toHexString(col), tag));
-				}
+			synchronized (usersLock) {
+				int[] tags = pendingList.getFriends(tag);
+				if (tags != null)
+					for (int i = 0; i < tags.length; i++)
+						mb.pending.add(tags[i]);
+				tags = requestList.getFriends(tag);
+				if (tags != null)
+					for (int i = 0; i < tags.length; i++)
+						mb.requests.add(tags[i]);
+				tags = friendList.getFriends(tag);
+				if (tags != null)
+					for (int i = 0; i < tags.length; i++) {
+						mb.friends.add(tags[i]);
+						String color = usersArgument.getArgument(tags[i], 2);
+						if (color == null)
+							continue;
+						int col = Integer.parseInt(color, Character.MAX_RADIX);
+						mb.colors.add(new ColorTransfer(Integer.toHexString(col), tag));
+					}
+			}
 
 			return mb;
 		}

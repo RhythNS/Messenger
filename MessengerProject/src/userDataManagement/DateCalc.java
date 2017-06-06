@@ -8,65 +8,30 @@ import java.util.Date;
 
 public class DateCalc {
 
-	private static SimpleDateFormat forDay = new SimpleDateFormat("HHmmss"),
-			wholeYear = new SimpleDateFormat("yyyyMMddHHmmss"), logger = new SimpleDateFormat("dd-MM-YYYY_HH.mm.ss"),
-			forYear = new SimpleDateFormat("yyyyMMdd");
+	private static SimpleDateFormat forDay = new SimpleDateFormat("HHmmss"), forYear = new SimpleDateFormat("yyyyMMdd");
 	private static final Object calendarLock = new Object();
 
-	public static String getMessageDate() {
-		return forDay.format(new Date());
-	}
-
-	public static String getDeviceDate() {
-		return wholeYear.format(new Date());
-	}
-
-	public static String getLoggerDate() {
-		return logger.format(new Date());
-	}
-
-	public static SimpleDateFormat getForDay() {
-		return forDay;
-	}
-
-	public static SimpleDateFormat getForYear() {
-		return forYear;
-	}
-
-	public static SimpleDateFormat getWholeYear() {
-		return wholeYear;
-	}
-
-	public static SimpleDateFormat getLogger() {
-		return logger;
-	}
-
-	public static String getDeviceDate(int days, int hours, int minutes, int seconds) {
+	public static void setOfSet(String date) {
 		synchronized (calendarLock) {
+			SimpleDateFormat wholeYear = new SimpleDateFormat("yyyyMMddHHmmss");
+			Date serverDate = null;
+			try {
+				serverDate = wholeYear.parse(date);
+			} catch (ParseException e) {
+				System.err.println(" #BlameBene");
+				e.printStackTrace();
+			}
 			Calendar cal = Calendar.getInstance();
-			cal.setTime(new Date());
-			cal.add(Calendar.DATE, days);
-			cal.add(Calendar.HOUR, hours);
-			cal.add(Calendar.MINUTE, minutes);
-			cal.add(Calendar.SECOND, seconds);
-			return wholeYear.format(cal.getTime());
+			cal.setTime(serverDate);
+			cal.getTimeZone();
 		}
-	}
-
-	public static boolean isDeviceDateCorrect(String date) {
-		try {
-			wholeYear.parse(date);
-		} catch (ParseException e) {
-			return false;
-		}
-		return true;
 	}
 
 	public static String getForYearDate() {
 		return forYear.format(new Date());
 	}
 
-	public static String getNextDay(String currentDay) {
+	public synchronized static String getNextDay(String currentDay) {
 		synchronized (calendarLock) {
 			Calendar cal = Calendar.getInstance();
 			try {
@@ -117,6 +82,20 @@ public class DateCalc {
 			e.printStackTrace();
 		}
 		return false;
+	}
+
+	public static void main(String[] args) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(new Date());
+		SimpleDateFormat wholeYear = new SimpleDateFormat("yyyyMMddHHmmss");
+		System.out.println(wholeYear.format(cal.getTime()));
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println(wholeYear.format(cal.getTime()));
 	}
 
 }

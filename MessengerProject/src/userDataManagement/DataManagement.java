@@ -2,6 +2,7 @@ package userDataManagement;
 
 import java.io.File;
 import java.time.LocalTime;
+import java.util.ArrayList;
 
 import dataManagement.FileException;
 
@@ -13,6 +14,7 @@ import dataManagement.FileException;
 public class DataManagement {
 
 	private MessageDirector messageHandler;
+	private FileSaver fileSaver;
 
 	private Thread nextDay;
 
@@ -25,6 +27,10 @@ public class DataManagement {
 			new FileException(saveDirectory);
 
 		messageHandler = new MessageDirector(saveDirectory);
+
+		File saveFiles = new File(saveDirectory, "files");
+		saveFiles.mkdirs();
+		fileSaver = new FileSaver(saveFiles);
 
 		nextDay = new Thread(new Runnable() {
 			@Override
@@ -50,7 +56,7 @@ public class DataManagement {
 		nextDay.start();
 	}
 
-	public Mailbox readAllTag(String date, int tag) {
+	public ArrayList<Message> readAllTag(String date, int tag) {
 		return messageHandler.getMessages(tag, date);
 	}
 
@@ -58,8 +64,8 @@ public class DataManagement {
 		return messageHandler.writeMessage(date, fromTag, toTag, message);
 	}
 
-	public boolean saveFile(String date, int fromTag, int toTag, String file) {
-		return messageHandler.writeFile(date, fromTag, toTag, file);
+	public boolean saveFile(int fromTag, int toTag, String name, byte[] data) {
+		return fileSaver.write(fromTag, toTag, name, data);
 	}
 
 }

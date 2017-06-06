@@ -1,30 +1,28 @@
 package server;
 
-import com.sun.media.jfxmedia.logging.Logger;
 import dataManagement.DateCalc;
-import dataManagement.FileMessage;
+import dataManagement.Logger;
 import dataManagement.Mailbox;
-import dataManagement.TextMessage;
+import dataManagement.Message;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 
 public class Account {
 
 	private String password;
 	private int tag;
 	private ArrayList<Client> clients;
-	private Server server;
+	private final Server server;
 	private boolean isLoggedIn = false;
-	private final Object object = new Object();
 
 	public Account(int tag, Server server) {
+		isLoggedIn = true;
 		this.tag = tag;
 		clients = new ArrayList<>();
 		this.password = password;
+		this.server = server;
 	}
 
 
@@ -33,26 +31,51 @@ public class Account {
 
 		for (Client c : clients) {
 			if (!whoGotIt.equals(c))
-				c.writeMessage(tag, from, date, message);
+				c.writeMessage(from, tag, date, message);
 		}
 
 		server.recieveMessage(from,this,message,date);
 	}
+
+	/**
+	 * This Message sends the
+	 * @param from
+	 * @param message
+	 * @param date
+	 * @param whoGotIt
+	 */
+	void dataReceived(int from, String message,String date, Client whoGotIt) {
+		String filename = message.split("\n")[0];
+
+		for(Client c: clients){
+			if(!whoGotIt.equals(c)){
+				try {
+					c.sendData(from, tag,date,filename,message.getBytes());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		server.dataRecieved(from,tag,message,date);
+	}
+
+
 	public void requestMessage(Client sender,String date){
 		Mailbox mb = server.requestMessage(this, date);
 
 		if(mb == null)return;
 
 		for (int i = 0; i < mb.messageSize(); i++) {
-			TextMessage tm = mb.getMessage(i);
+			Message tm = mb.getMessage(i);
 			sender.writeMessage(tm.getTo(),tm.getFrom(),tm.getDate(),tm.getContent());
 		}
 		for (int i = 0; i < mb.fileSize(); i++) {
-			FileMessage fm = mb.getFile(i);
+			Message fm = mb.getFile(i);
+			String[] split = fm.getContent().split("\n");
 			try {
-				sender.writeMessage(fm.getFrom(),fm.getTo(),fm.getDate(),fm.getContent());
-			} catch (FileNotFoundException e) {
-				dataManagement.Logger.getInstance().log("Acc002: Cannot find the File");
+				sender.sendData(fm.getFrom(),fm.getTo(),fm.getDate(),split[0],split[1].getBytes());
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 		}
 	}
@@ -61,14 +84,28 @@ public class Account {
 		if(clients.remove(client)) {
 			server.disconnectDevice(deviceNumber,this);
 			if(clients.size()== 0){
+				isLoggedIn = false;
 				server.disconnctAccount(this);
 			}
 		}
 	}
 
 	public boolean addClient(Client toAdd){
-		return clients.size() > 20;
+		if(clients.size() >= Constants.MAX_DEVICES){
+			Logger.getInstance().log("Acc002: Too many devices are logged in!");
+			return false;
+		}
+		if(clients.contains(toAdd)){
+			Logger.getInstance().log("Acc003: ");
+			return false;
+		}
+		if(clients.add(toAdd)){
+			isLoggedIn = true;
+			return true;
+		}
+		return false;
 	}
+
 	public void acceptFriend(int tag){
 		server.addFriendTo(this,tag);
 	}
@@ -102,8 +139,4 @@ public class Account {
 		return server.leaveGroup(tag ,grpTag);
 	}
 
-	public FileOutputStream dataReceived(int tag, String message) {
-		//TODO
-		return null;
-	}
 }
