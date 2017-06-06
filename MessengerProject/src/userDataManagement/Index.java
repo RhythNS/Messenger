@@ -7,7 +7,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class Index {
 
@@ -59,12 +58,12 @@ public class Index {
 				tag2 = Integer.parseInt(arr[2], Character.MAX_RADIX);
 				if (isGroup && tag2 == tag || (!isGroup && ((tag1 == tag && tag2 > 0) || (tag2 == tag && tag1 > 0)))) {
 					if (arr.length == 4) {
-						FileMessage fm = new FileMessage(this.date + arr[0], tag1, tag2);
-						fm.setContent(fileManager.getFile(arr[3]));
+						Message fm = new Message(this.date + arr[0], tag1, tag2);
+//						fm.setContent(fileManager.getFile(arr[3]));
 						if (fm != null)
 							mb.files.add(fm);
 					} else {
-						TextMessage tm = new TextMessage(this.date + arr[0], tag1, tag2);
+						Message tm = new Message(this.date + arr[0], tag1, tag2);
 						tm.pointerFrom = Long.parseLong(arr[3], Character.MAX_RADIX);
 						tm.pointerTo = Long.parseLong(arr[4], Character.MAX_RADIX);
 						tm = messageIO.read(tm);

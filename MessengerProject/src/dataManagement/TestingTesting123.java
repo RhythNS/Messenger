@@ -257,7 +257,7 @@ public class TestingTesting123 {
 				String name = scan.nextLine();
 				System.out.print("Pw: ");
 				String pw = scan.nextLine();
-				System.out.print("Tag: " + dm.registerUser(name, pw) + "\nContinue?: ");
+				System.out.print("Tag: " + dm.registerUser(name, pw, "34") + "\nContinue?: ");
 			}
 			while (!scan.nextLine().equals("exit")) {
 				System.out.print("login tag: ");
@@ -275,7 +275,7 @@ public class TestingTesting123 {
 			Collections.shuffle(randomNames);
 			String password = "passwort";
 			for (int i = 0; i < randomNames.size(); i++) {
-				dm.registerUser(randomNames.get(i), password);
+				dm.registerUser(randomNames.get(i), password, "34");
 			}
 			break;
 		case TESTING:

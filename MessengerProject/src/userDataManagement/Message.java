@@ -1,9 +1,11 @@
 package userDataManagement;
 
-public abstract class Message {
+public class Message {
 
 	int from, to;
 	String date;
+	String content;
+	long pointerFrom, pointerTo;
 
 	public Message(String date, int from, int to) {
 		this.date = date;
@@ -21,6 +23,14 @@ public abstract class Message {
 
 	public String getDate() {
 		return date;
+	}
+
+	public String getContent() {
+		return content;
+	}
+
+	public void setContent(String content) {
+		this.content = content;
 	}
 
 }

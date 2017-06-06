@@ -14,7 +14,7 @@ public class DataManagement {
 
 	// USER stuff:
 	/**
-	 * Arguments: 0 Username, 1 Password
+	 * Arguments: 0 Username, 1 Password, 2 Color
 	 */
 	private ArgumentRandomAccessFile usersArgument;
 	private BinaryTreeFile usersTree;
@@ -67,7 +67,7 @@ public class DataManagement {
 		groupDir.mkdirs();
 
 		usersArgument = new ArgumentRandomAccessFile(new File(userDir, "arguments.txt"), Constants.MAX_USERNAME_SIZE,
-				Constants.MAX_PASSWORD_SIZE);
+				Constants.MAX_PASSWORD_SIZE, 5);
 		usersTree = new BinaryTreeFile(new File(userDir, "binaryTree.txt"), Constants.MAX_USERNAME_SIZE);
 		friendList = new FriendList(new File(userDir, "friendlist.txt"));
 		usersGroupList = new FriendList(new File(userDir, "grouplist.txt"));
@@ -122,12 +122,12 @@ public class DataManagement {
 	 * returned. Otherwise the tag is returned. It is Important that the
 	 * username and password do not go over the length limit!
 	 */
-	public int registerUser(String username, String password) {
+	public int registerUser(String username, String password, String color) {
 		synchronized (usersLock) {
 			if (username != null && password != null && username.length() < Constants.MAX_USERNAME_SIZE + 1
-					&& password.length() < Constants.MAX_PASSWORD_SIZE + 1) {
+					&& password.length() < Constants.MAX_PASSWORD_SIZE + 1 && color != null) {
 				if (usersTree.getTag(username) == -1) {
-					int tag = usersArgument.add(username, password);
+					int tag = usersArgument.add(username, password, color);
 					usersTree.add(tag, username);
 					friendList.make(tag);
 					synchronized (userGroupLock) {
@@ -417,7 +417,11 @@ public class DataManagement {
 	public int[] getGroupTags(int tag) {
 		if (tag > 0)
 			synchronized (userGroupLock) {
-				return usersGroupList.getFriends(tag);
+				int[] tags = usersGroupList.getFriends(tag);
+				for (int i = 0; i < tags.length; i++) {
+					tags[i] = -tags[i];
+				}
+				return tags;
 			}
 		return null;
 	}
@@ -510,6 +514,10 @@ public class DataManagement {
 		if (tag > 0 && date != null && date.length() != 0) {
 			int[] groupTags = getGroupTags(tag);
 			Mailbox mb = messageDirector.getMessages(tag, date, groupTags);
+			for (int i = 0; i < groupTags.length; i++) {
+				int[] tags = getGroupMembers(groupTags[i]);
+				mb.groupTransfers.add(new GroupTransfer(groupTags[i], tags));
+			}
 			int[] tags = pendingList.getFriends(tag);
 			if (tags != null)
 				for (int i = 0; i < tags.length; i++)
@@ -520,8 +528,15 @@ public class DataManagement {
 					mb.requests.add(tags[i]);
 			tags = friendList.getFriends(tag);
 			if (tags != null)
-				for (int i = 0; i < tags.length; i++)
+				for (int i = 0; i < tags.length; i++) {
 					mb.friends.add(tags[i]);
+					String color = usersArgument.getArgument(tags[i], 2);
+					if (color == null)
+						continue;
+					int col = Integer.parseInt(color, Character.MAX_RADIX);
+					mb.colors.add(new ColorTransfer(Integer.toHexString(col), tag));
+				}
+
 			return mb;
 		}
 		return null;
