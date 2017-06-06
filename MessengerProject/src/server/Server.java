@@ -151,12 +151,12 @@ public class Server {
 		return dataMangement.addFriend(account.getTag(),tagOfAccountToAdd);
 	}
 
-	void recieveMessage(int from, Account to, String message, String date) {
+	void receiveMessage(int from, Account to, String message, String date) {
 		String encrypted = Encrypter.encryptSynchron(message,secretKey);
 		dataMangement.saveMessage(from, to.getTag(), date, encrypted);
 	}
 
-	void recieveFile(int from, Account to, byte[] file, String date){
+	void receiveFile(int from, Account to, byte[] file, String date){
 		String encodedFile = Encrypter.encryptSynchron(file,secretKey);
 		dataMangement.saveFile(from,to.getTag(),date,encodedFile);
 	}
@@ -213,7 +213,7 @@ public class Server {
 		dataMangement.logout(account.getTag(),deviceNumber,timeout);
 	}
 
-	void dataRecieved(int from, int toAcc, byte[] message, String date) {
+	void dataReceived(int from, int toAcc, byte[] message, String date) {
 		String encrypted = Encrypter.encryptSynchron(message,secretKey);
 		dataMangement.saveFile(from,toAcc,date,encrypted);
 	}

@@ -331,7 +331,7 @@ public class Client implements Runnable {
 			} while (checkSumme != 0);
 			info = read();
 		} while (!getHeader(info).equals("EOT"));
-		account.dataReceived(Integer.parseInt(getInfo(received)), getMessage(received), bytes);
+		account.dataReceived(Integer.parseInt(getInfo(received)), getMessage(received), bytes,this);
 	}
 
 	private void requestMailbox(String received) {

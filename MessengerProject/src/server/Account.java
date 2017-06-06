@@ -25,7 +25,7 @@ public class Account {
 	}
 
 
-	public void recieveMessage(int from, String message, Client whoGotIt){
+	public void receiveMessage(int from, String message, Client whoGotIt){
 		String date = DateCalc.getMessageDate();
 
 		for (Client c : clients) {
@@ -33,7 +33,7 @@ public class Account {
 				c.writeMessage(from, tag, date, message);
 		}
 
-		server.recieveMessage(from,this,message,date);
+		server.receiveMessage(from,this,message,date);
 	}
 
 	/**
@@ -55,7 +55,7 @@ public class Account {
 				}
 			}
 		}
-		server.dataRecieved(from,tag,message,date);
+		server.dataReceived(from,tag,message,date);
 	}
 
 
