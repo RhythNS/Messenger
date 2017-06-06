@@ -28,6 +28,10 @@ public class DataManagement {
 
 		messageHandler = new MessageDirector(saveDirectory);
 
+		File saveFiles = new File(saveDirectory, "files");
+		saveFiles.mkdirs();
+		fileSaver = new FileSaver(saveFiles);
+
 		nextDay = new Thread(new Runnable() {
 			@Override
 			public void run() {
