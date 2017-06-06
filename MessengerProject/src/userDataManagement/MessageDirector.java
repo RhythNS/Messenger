@@ -1,6 +1,7 @@
 package userDataManagement;
 
 import java.io.File;
+import java.util.ArrayList;
 
 public class MessageDirector {
 	private Index[] indexList;
@@ -39,7 +40,7 @@ public class MessageDirector {
 		}
 	}
 
-	Mailbox getMessages(int tag, String date) {
+	ArrayList<Message> getMessages(int tag, String date) {
 		if (date.length() != 8) {
 			System.err.println("Length of date is not right! #BlameBene");
 			return null;
@@ -51,7 +52,7 @@ public class MessageDirector {
 				}
 		Index olderIndex = getOlderDay(date);
 		if (olderIndex != null) {
-			Mailbox mb = olderIndex.readAll(tag);
+			ArrayList<Message> mb = olderIndex.readAll(tag);
 			olderIndex.close();
 			return mb;
 		}
@@ -73,28 +74,6 @@ public class MessageDirector {
 		Index olderIndex = getOlderDay(subDate);
 		if (olderIndex != null) {
 			boolean alright = olderIndex.write(fromTag, toTag, message, date.substring(8));
-			olderIndex.close();
-			return alright;
-		}
-		return false;
-	}
-
-	boolean writeFile(String date, int fromTag, int toTag, String file) {
-		String subDate = date.substring(0, 8);
-		for (int i = 0; i < indexList.length; i++)
-			if (indexList[i] != null && indexList[i].getDate().equals(subDate))
-				synchronized (indexList[i].getLock()) {
-					return indexList[i].saveFile(fromTag, toTag, file, date.substring(8));
-				}
-
-		addDay();
-		if (indexList[pointer] == null && indexList[pointer].getDate().equals(subDate))
-			synchronized (indexList[pointer].getLock()) {
-				return indexList[pointer].saveFile(fromTag, toTag, file, date.substring(8));
-			}
-		Index olderIndex = getOlderDay(subDate);
-		if (olderIndex != null) {
-			boolean alright = olderIndex.saveFile(fromTag, toTag, file, date.substring(8));
 			olderIndex.close();
 			return alright;
 		}

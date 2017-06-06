@@ -8,77 +8,24 @@ import java.util.Date;
 
 public class DateCalc {
 
-	private static SimpleDateFormat forDay = new SimpleDateFormat("HHmmss"),
-			wholeYear = new SimpleDateFormat("yyyyMMddHHmmss"), logger = new SimpleDateFormat("dd-MM-YYYY_HH.mm.ss"),
-			forYear = new SimpleDateFormat("yyyyMMdd");
-	private static final Object calendarLock = new Object();
-
-	public static String getMessageDate() {
-		return forDay.format(new Date());
-	}
-
-	public static String getDeviceDate() {
-		return wholeYear.format(new Date());
-	}
-
-	public static String getLoggerDate() {
-		return logger.format(new Date());
-	}
-
-	public static SimpleDateFormat getForDay() {
-		return forDay;
-	}
-
-	public static SimpleDateFormat getForYear() {
-		return forYear;
-	}
-
-	public static SimpleDateFormat getWholeYear() {
-		return wholeYear;
-	}
-
-	public static SimpleDateFormat getLogger() {
-		return logger;
-	}
-
-	public static String getDeviceDate(int days, int hours, int minutes, int seconds) {
-		synchronized (calendarLock) {
-			Calendar cal = Calendar.getInstance();
-			cal.setTime(new Date());
-			cal.add(Calendar.DATE, days);
-			cal.add(Calendar.HOUR, hours);
-			cal.add(Calendar.MINUTE, minutes);
-			cal.add(Calendar.SECOND, seconds);
-			return wholeYear.format(cal.getTime());
-		}
-	}
-
-	public static boolean isDeviceDateCorrect(String date) {
-		try {
-			wholeYear.parse(date);
-		} catch (ParseException e) {
-			return false;
-		}
-		return true;
-	}
+	private static SimpleDateFormat forDay = new SimpleDateFormat("HHmmss"), forYear = new SimpleDateFormat("yyyyMMdd");
 
 	public static String getForYearDate() {
 		return forYear.format(new Date());
 	}
 
-	public static String getNextDay(String currentDay) {
-		synchronized (calendarLock) {
-			Calendar cal = Calendar.getInstance();
-			try {
-				cal.setTime(forYear.parse(currentDay));
-			} catch (ParseException e) {
-				System.err.println("Could not parse the date! #BlameBene");
-				e.printStackTrace();
-				return null;
-			}
-			cal.add(Calendar.DATE, 1);
-			return forYear.format(cal.getTime());
+	public synchronized static String getNextDay(String currentDay) {
+		Calendar cal = Calendar.getInstance();
+		try {
+			cal.setTime(forYear.parse(currentDay));
+		} catch (ParseException e) {
+			System.err.println("Could not parse the date! #BlameBene");
+			e.printStackTrace();
+			return null;
 		}
+		cal.add(Calendar.DATE, 1);
+		return forYear.format(cal.getTime());
+
 	}
 
 	public static String[] sort(File[] files) {
