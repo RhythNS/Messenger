@@ -7,13 +7,13 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Index {
 
 	private File dir, indexFile;
 	private final Object lock = new Object();
 	private MessageIO messageIO;
-	private FileManager fileManager;
 	private String date;
 
 	Index(String date, File saveDir) {
@@ -34,10 +34,9 @@ public class Index {
 
 		File fileManagerFile = new File(dir, "files");
 		fileManagerFile.mkdirs();
-		fileManager = new FileManager(fileManagerFile);
 	}
 
-	Mailbox readAll(int tag) {
+	ArrayList<Message> readAll(int tag) {
 		BufferedReader br = null;
 		try {
 			br = new BufferedReader(new FileReader(indexFile));
@@ -46,7 +45,7 @@ public class Index {
 			e1.printStackTrace();
 			return null;
 		}
-		Mailbox mb = new Mailbox();
+		ArrayList<Message> mb = new ArrayList<>();
 		boolean isGroup = tag < 0;
 		try {
 			String s = br.readLine();
@@ -57,19 +56,12 @@ public class Index {
 				tag1 = Integer.parseInt(arr[1], Character.MAX_RADIX);
 				tag2 = Integer.parseInt(arr[2], Character.MAX_RADIX);
 				if (isGroup && tag2 == tag || (!isGroup && ((tag1 == tag && tag2 > 0) || (tag2 == tag && tag1 > 0)))) {
-					if (arr.length == 4) {
-						Message fm = new Message(this.date + arr[0], tag1, tag2);
-//						fm.setContent(fileManager.getFile(arr[3]));
-						if (fm != null)
-							mb.files.add(fm);
-					} else {
-						Message tm = new Message(this.date + arr[0], tag1, tag2);
-						tm.pointerFrom = Long.parseLong(arr[3], Character.MAX_RADIX);
-						tm.pointerTo = Long.parseLong(arr[4], Character.MAX_RADIX);
-						tm = messageIO.read(tm);
-						if (tm != null)
-							mb.messages.add(tm);
-					}
+					Message tm = new Message(this.date + arr[0], tag1, tag2);
+					tm.pointerFrom = Long.parseLong(arr[3], Character.MAX_RADIX);
+					tm.pointerTo = Long.parseLong(arr[4], Character.MAX_RADIX);
+					tm = messageIO.read(tm);
+					if (tm != null)
+						mb.add(tm);
 				}
 				s = br.readLine();
 			}
@@ -134,44 +126,6 @@ public class Index {
 			bw.close();
 		} catch (IOException e) {
 			System.err.println("Could not close the writer! #BlameBene");
-			e.printStackTrace();
-			return false;
-		}
-		return true;
-	}
-
-	boolean saveFile(int fromTag, int toTag, String message, String date) {
-		BufferedWriter bw = null;
-		try {
-			bw = new BufferedWriter(new FileWriter(indexFile, true));
-		} catch (IOException e) {
-			System.err.println("Could not init writer! #BlameBene");
-			e.printStackTrace();
-			return false;
-		}
-		String fileName = fileManager.getFileName();
-		if (fileName != null) {
-			System.err.println("Filename is null! #BlameBene");
-			try {
-				bw.close();
-			} catch (IOException e) {
-				System.err.println("Could not close the writer! #BlameBene");
-				e.printStackTrace();
-			}
-			return false;
-		}
-		try {
-			bw.write(date + DataConstants.SEPERATOR + Integer.toString(fromTag, Character.MAX_RADIX)
-					+ DataConstants.SEPERATOR + Integer.toString(toTag, Character.MAX_RADIX) + DataConstants.SEPERATOR
-					+ fileName);
-		} catch (IOException e) {
-			System.err.println("Could not write! #BlameBene");
-			e.printStackTrace();
-		}
-		try {
-			bw.close();
-		} catch (IOException e) {
-			System.err.println("Could not close the Writer! #BlameBene");
 			e.printStackTrace();
 			return false;
 		}
