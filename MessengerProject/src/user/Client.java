@@ -6,7 +6,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.PublicKey;
-import java.util.Date;
 
 public class Client implements Runnable{
 
@@ -171,10 +170,9 @@ public class Client implements Runnable{
 	 * requests message from server from a specific date until now
 	 * @param date
 	 */
-	public void messageRequest(Date date) {
+	public void mailboxRequest(String date) {
 		synchronized (userLock) {
-			String d = date.getYear() + "." + date.getMonth() + "." + date.getDate() + "." + date.getHours() + "." + date.getMinutes() + "." + date.getSeconds();
-			write("MSGR",d,"");
+			write("MR", date, "");
 		}
 	}
 
@@ -197,7 +195,7 @@ public class Client implements Runnable{
 			for (int i = 0; i < friendList.length-1; i++) {
 				stringBuilder.append(friendList[i]).append(",");
 			}
-			stringBuilder.append(friendList[friendList.length]);
+			stringBuilder.append(friendList[friendList.length-1]);
 			write("SFL", friendList.length + "", stringBuilder.toString());
 		}
 	}
@@ -207,13 +205,30 @@ public class Client implements Runnable{
 	 * @param username
 	 * @return returns a contact if user is found else returns null
 	 */
-	public Contact searchFriends(String username) {
+	public Contact searchUser(String username) {
 		synchronized (userLock) {
-			write("SF","",username);
+			write("SU","",username);
+			String response = read();
+			Contact contact = null;
+			String color = getInfo(response);
+			if (getHeader(response).equals("OK"))
+				contact = new Contact(username, Integer.parseInt(getMessage(response)));
+			return contact;
+		}
+	}
+
+	/**
+	 * search for an other User
+	 * @param tag
+	 * @return returns a contact if user is found else returns null
+	 */
+	public Contact searchFriend(int tag) {
+		synchronized (userLock) {
+			write("SF",tag+"","");
 			String response = read();
 			Contact contact = null;
 			if (getHeader(response).equals("OK"))
-				contact = new Contact(username, Integer.parseInt(getMessage(response)));
+				contact = new Contact(getMessage(response), tag);
 			return contact;
 		}
 	}
@@ -242,11 +257,10 @@ public class Client implements Runnable{
 	/**
 	 * removes a friend from your friend list and remove you from his friend list
 	 * @param tag
-	 * @param message
 	 */
-	public void removeFriend(int tag, String message) {
+	public void removeFriend(int tag) {
 		synchronized (userLock) {
-			write("RF", tag + "", message);
+			write("RF", tag + "", "");
 		}
 	}
 
@@ -262,7 +276,7 @@ public class Client implements Runnable{
 			for (int i = 0; i < tags.length-1; i++) {
 				stringBuilder.append(tags[i]).append(",");
 			}
-			stringBuilder.append(tags[tags.length]);
+			stringBuilder.append(tags[tags.length-1]);
 			write("CG", groupName,stringBuilder.toString());
 			return Integer.parseInt(getInfo(read()));
 		}
@@ -279,18 +293,34 @@ public class Client implements Runnable{
 		}
 	}
 
+	/**
+	 * promotes user to group leader
+	 * works only if you are group leader
+	 * @param groupTag
+	 * @param userTag
+	 */
 	public void promoteGroupLeader(int groupTag, int userTag) {
 		synchronized (userLock) {
 			write("PGL", groupTag + "", userTag + "");
 		}
 	}
 
+	/**
+	 * kicks user from group
+	 * works only if you are group leader
+	 * @param groupTag
+	 * @param userTag
+	 */
 	public void kickGroupMember(int groupTag, int userTag) {
 		synchronized (userLock) {
 			write("KGM", groupTag + "", userTag + "");
 		}
 	}
 
+	/**
+	 * leave the group
+	 * @param groupTag
+	 */
 	public void leaveGroup(int groupTag) {
 		synchronized (userLock) {
 			write("LG", groupTag + "", "");
@@ -322,6 +352,9 @@ public class Client implements Runnable{
 								break;
 							case "SRL":
 								requestListReceived(received);
+								break;
+							case "SGL":
+								groupListReceived(received);
 								break;
 							case "GI":
 								invitedToGroup(received);
@@ -406,6 +439,14 @@ public class Client implements Runnable{
 		}
 	}
 
+	private void groupListReceived(String received) {
+		String[] groups = getMessage(received).split(",");
+		int[] tags = new int[groups.length];
+		for (int i = 0; i < groups.length; i++) {
+			tags[i] = Integer.parseInt(groups[i]);
+		}
+	}
+
 	private void friendRequestReceived(String received) {
 		int userName = Integer.parseInt(getInfo(received));
 		String username = getMessage(received);
@@ -414,7 +455,7 @@ public class Client implements Runnable{
 	private void messageReceived(String received) {
 		String fromTo = getInfo(received);
 		String[] infos = fromTo.split(",");
-		user.messageRecieved(Integer.parseInt(infos[0]), Integer.parseInt(infos[1]), getMessage(received),infos[2]);
+		user.messageReceived(Integer.parseInt(infos[0]), Integer.parseInt(infos[1]), getMessage(received),infos[2]);
 	}
 
 	private void dataReceived(String received) {

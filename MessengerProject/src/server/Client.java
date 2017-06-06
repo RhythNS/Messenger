@@ -133,8 +133,35 @@ public class Client implements Runnable {
 		for (int i = 0; i < friendList.length-1; i++) {
 			stringBuilder.append(friendList[i]).append(",");
 		}
-		stringBuilder.append(friendList[friendList.length]);
+		stringBuilder.append(friendList[friendList.length-1]);
 		write("SFL", friendList.length + "", stringBuilder.toString());
+	}
+
+	public void sendPendinglist(int[] pending) {
+		StringBuilder stringBuilder = new StringBuilder();
+		for (int i = 0; i < pending.length-1; i++) {
+			stringBuilder.append(pending[i]).append(",");
+		}
+		stringBuilder.append(pending[pending.length-1]);
+		write("SPL", pending.length + "", stringBuilder.toString());
+	}
+
+	public void sendRequestlist(int[] requests) {
+		StringBuilder stringBuilder = new StringBuilder();
+		for (int i = 0; i < requests.length-1; i++) {
+			stringBuilder.append(requests[i]).append(",");
+		}
+		stringBuilder.append(requests[requests.length-1]);
+		write("SFL", requests.length + "", stringBuilder.toString());
+	}
+
+	public void sendGrouplist(int[] groups) {
+		StringBuilder stringBuilder = new StringBuilder();
+		for (int i = 0; i < groups.length-1; i++) {
+			stringBuilder.append(groups[i]).append(",");
+		}
+		stringBuilder.append(groups[groups.length-1]);
+		write("SGL", groups.length + "", stringBuilder.toString());
 	}
 
 	public void sendFriendRequest(int tag, String username) {
@@ -187,6 +214,42 @@ public class Client implements Runnable {
 							case "DATA":
 								dataReceived(received);
 								break;
+							case "RFL":
+								friendListRequested(received);
+								break;
+							case "SFL":
+								friendListReceived(received);
+								break;
+							case "SU":
+								searchUser(received);
+								break;
+							case "SFR":
+								friendshipRequested(received);
+								break;
+							case "RFR":
+								friendRequestReplied(received);
+								break;
+							case "RF":
+								friendRemoved(received);
+								break;
+							case "CG":
+								groupCreated(received);
+								break;
+							case "GI":
+								groupInvite(received);
+								break;
+							case "PGL":
+								promoteGroupLeader(received);
+								break;
+							case "KGM":
+								kickGroupMember(received);
+								break;
+							case "LG":
+								leftGroup(received);
+								break;
+							case "MR":
+								requestMailbox(received);
+								break;
 							default:
 								break;
 						}
@@ -231,6 +294,81 @@ public class Client implements Runnable {
 			info = read();
 		} while (!getHeader(info).equals("EOT"));
 		account.dataReceived(Integer.parseInt(getInfo(received)), getMessage(received), bytes);
+	}
+
+	private void requestMailbox(String received) {
+		String date = getInfo(received);
+	}
+
+	private void searchUser(String received) {
+		String response = "";
+		String color = "";
+		if (getInfo(received).equals("")) {
+			String username = getMessage(received);
+		} else {
+			int tag = Integer.parseInt(getInfo(received));
+		}
+		if (response.equals("")) {
+			write("NO", "", "");
+		} else {
+			write("OK",color,response);
+		}
+
+	}
+
+	private void friendListRequested(String received) {
+		//Todo: request friendList
+	}
+
+	private void friendListReceived(String received) {
+		String[] friends = getMessage(received).split(",");
+		int[] tags = new int[friends.length];
+		for (int i = 0; i < friends.length; i++) {
+			tags[i] = Integer.parseInt(friends[i]);
+		}
+	}
+
+	private void friendshipRequested(String received) {
+		int tag = Integer.parseInt(getInfo(received));
+	}
+
+	private void friendRequestReplied(String received) {
+		int tag = Integer.parseInt(getInfo(received));
+		boolean accept = Boolean.parseBoolean(getMessage(received));
+	}
+
+	private void friendRemoved(String received) {
+		int tag = Integer.parseInt(getInfo(received));
+	}
+
+	private void groupCreated(String received) {
+		String[] members = getMessage(received).split(",");
+		int[] tags = new int[members.length];
+		for (int i = 0; i < members.length; i++) {
+			tags[i] = Integer.parseInt(members[i]);
+		}
+		String groupname = getInfo(received);
+		int groupTag = 0;
+		write("GT", groupTag + "", "");
+	}
+
+	private void groupInvite(String received) {
+		int groupTag = Integer.parseInt(getInfo(received));
+		int userTag = Integer.parseInt(getMessage(received));
+	}
+
+	private void promoteGroupLeader(String received) {
+		int groupTag = Integer.parseInt(getInfo(received));
+		int userTag = Integer.parseInt(getMessage(received));
+	}
+
+	private void kickGroupMember(String received) {
+		int groupTag = Integer.parseInt(getInfo(received));
+		int userTag = Integer.parseInt(getMessage(received));
+	}
+
+	private void leftGroup(String received) {
+		int groupTag = Integer.parseInt(getInfo(received));
 	}
 
 	public static void main(String[] args) throws IOException {
