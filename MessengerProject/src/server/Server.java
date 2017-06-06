@@ -1,17 +1,15 @@
 package server;
 
-import java.io.IOException;
-import java.util.ArrayList;
-
-import dataManagement.DataManagement;
-import dataManagement.DeviceLogin;
-import dataManagement.Logger;
-import dataManagement.Mailbox;
+import dataManagement.*;
+import secruity.Decrypter;
+import secruity.Encrypter;
 import secruity.KeyStoreSynchron;
 import socketio.ServerSocket;
 import socketio.Socket;
 
 import javax.crypto.SecretKey;
+import java.io.IOException;
+import java.util.ArrayList;
 
 public class Server {
 
@@ -69,7 +67,6 @@ public class Server {
 	 */
 
 	Account registerUser(String user, String pass) {
-		synchronized (userlock) {
 			if (user == null|| pass == null) {
 				Logger.getInstance().log("Ser001: User cannot register because UserPass is null!");
 				return null;
@@ -82,24 +79,20 @@ public class Server {
 			accounts.add(account);
 
 			return account;
-		}
 	}
 
 
 	Account loginAccount(int tag, String passwort){
-		synchronized (userlock){
+		if(!dataMangement.login(tag,passwort))return null;
 
-			if(!dataMangement.login(tag,passwort))return null;
-
-			for (Account a: accounts){
-				if(a.getTag() == tag){
-					return a;
-				}
+		for (Account a: accounts){
+			if(a.getTag() == tag){
+				return a;
 			}
-			Account a = new Account(tag, this);
-			accounts.add(a);
-			return a;
 		}
+		Account a = new Account(tag, this);
+		accounts.add(a);
+		return a;
 	}
 
 	/**
@@ -114,7 +107,6 @@ public class Server {
 
 	Account loginAccount(String username, String passwort) {
 
-		synchronized (userlock) {
 			int tag = dataMangement.login(username, passwort);
 			if (tag == -1) {
 				Logger.getInstance().log("Ser003: Cannot find the fitting tag to log in @loginAccount()!");
@@ -129,7 +121,6 @@ public class Server {
 			Account a = new Account(tag,this);
 			accounts.add(a);
 			return a;
-		}
 	}
 
 	int createGroup(String name, Account[] accounts) {
@@ -148,36 +139,54 @@ public class Server {
 	}
 
 	void recieveMessage(int from, Account to, String message, String date) {
-		synchronized (userlock) {
-			dataMangement.saveMessage(from, to.getTag(), date, message);
-		}
+		String encrypted = Encrypter.encryptSynchron(message,secretKey);
+		dataMangement.saveMessage(from, to.getTag(), date, encrypted);
 	}
 
-	public boolean removeFriend(int tagToRemove, int tagFromWhichAcc) {
-		synchronized (userlock) {
-			return dataMangement.removeFriend(tagFromWhichAcc, tagToRemove);
-		}
+	void recieveFile(int from, Account to, byte[] file, String date){
+		String encodedFile = Encrypter.encryptSynchron(file,secretKey);
+		dataMangement.saveFile(from,to.getTag(),date,encodedFile);
+	}
+
+	boolean removeFriend(int tagToRemove, int tagFromWhichAcc) {
+		return dataMangement.removeFriend(tagFromWhichAcc, tagToRemove);
 	}
 
 	Mailbox requestMessage(Account sender, String date) {
-		synchronized (userlock) {
-			return dataMangement.getMessages(sender.getTag(), date);
+		Mailbox returnBox =dataMangement.getMessages(sender.getTag(),date);
+		for (int i = 0; i < returnBox.messageSize(); i++) {
+			TextMessage tm = returnBox.getMessage(i);
+			tm.setContent(Decrypter.decryptSynchronToString(tm.getContent(),secretKey));
 		}
+
+		for (int i = 0; i < returnBox.fileSize(); i++) {
+			FileMessage fm = returnBox.getFile(i);
+			fm.setContent(Decrypter.decryptSynchronToString(fm.getContent(),secretKey));
+		}
+		return returnBox;
 	}
 
 	int[] getFriendList(int account) {
-		synchronized (userlock) {
-			return dataMangement.getFriends(account);
-		}
+		return dataMangement.getFriends(account);
 	}
 
 	boolean leaveGroup(int accTag, int grpTag) {
-		synchronized (userlock) {
-			return dataMangement.removeFromGroup(accTag, grpTag);
+		return dataMangement.removeFromGroup(accTag, grpTag);
+	}
+
+	DeviceLogin diviceLogin(int tag,int deviceNr) {
+		return dataMangement.loginDevice(tag,deviceNr);
+	}
+
+	void disconnctAccount(Account account) {
+		if(accounts.remove(account)) {
+			if(accounts.size()== 0) {
+				dataMangement.noUsersLoggedIn();
+			}
 		}
 	}
 
-	public DeviceLogin diviceLogin(int tag,int deviceNr) {
-		return dataMangement.loginDevice(tag,deviceNr);
+	void disconnectDevice(int deviceNumber, Account account) {
+		dataMangement.logout(account.getTag(),deviceNumber,false);
 	}
 }

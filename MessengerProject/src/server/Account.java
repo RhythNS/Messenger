@@ -10,6 +10,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class Account {
 
@@ -26,50 +27,52 @@ public class Account {
 		this.password = password;
 	}
 
-	public void recieveMessage(int from, String message, Client whoGotIt){
-		synchronized (object) {
-			String date = DateCalc.getMessageDate();
-			for (Client c : clients) {
-				if (!whoGotIt.equals(c))
-					c.write(tag, from, date, message);
-			}
 
-			server.recieveMessage(from,this,message,date);
+	public void recieveMessage(int from, String message, Client whoGotIt){
+		String date = DateCalc.getMessageDate();
+
+		for (Client c : clients) {
+			if (!whoGotIt.equals(c))
+				c.writeMessage(tag, from, date, message);
 		}
+
+		server.recieveMessage(from,this,message,date);
 	}
 	public void requestMessage(Client sender,String date){
 		Mailbox mb = server.requestMessage(this, date);
+
 		if(mb == null)return;
+
 		for (int i = 0; i < mb.messageSize(); i++) {
 			TextMessage tm = mb.getMessage(i);
-			sender.write(tm.getTo(),tm.getFrom(),tm.getDate(),tm.getContent());
+			sender.writeMessage(tm.getTo(),tm.getFrom(),tm.getDate(),tm.getContent());
 		}
 		for (int i = 0; i < mb.fileSize(); i++) {
 			FileMessage fm = mb.getFile(i);
 			try {
-				sender.write(fm.getFrom(),fm.getTo(),fm.getDate(),new FileInputStream(fm.getContent()));
+				sender.writeMessage(fm.getFrom(),fm.getTo(),fm.getDate(),fm.getContent());
 			} catch (FileNotFoundException e) {
 				dataManagement.Logger.getInstance().log("Acc002: Cannot find the File");
 			}
 		}
-
 	}
 
-	public void acceptFriend(int tag){
-		synchronized (object){
-			server.addFriendTo(this,tag);
-
-		}
-	}
-
-	public void sendMessage(String message, Account toAccount, Client sender){
-		for (Client client: clients) {
-			if(!client.equals(sender)){
-				client.write(toAccount.getTag(), tag, DateCalc.getMessageDate(),message);
+	public void disconnect(Client client, int deviceNumber){
+		if(clients.remove(client)) {
+			server.disconnectDevice(deviceNumber,this);
+			if(clients.size()== 0){
+				server.disconnctAccount(this);
 			}
 		}
-
 	}
+
+	public boolean addClient(Client toAdd){
+		return clients.size() > 20;
+	}
+	public void acceptFriend(int tag){
+		server.addFriendTo(this,tag);
+	}
+
 
 	public void addToFriendlist(int tagToAdd){
 		server.addFriendTo(this, tagToAdd );
@@ -91,21 +94,16 @@ public class Account {
 		return tag;
 	}
 
-	public void addClient(Client client) {
-		clients.add(client);
-	}
-
 	public int[] getFriendList(){
 		return server.getFriendList(tag);
 	}
 
 	public boolean leaveGroup(int grpTag){
-		boolean res = server.leaveGroup(tag ,grpTag);
-		return res;
+		return server.leaveGroup(tag ,grpTag);
 	}
+
 	public FileOutputStream dataReceived(int tag, String message) {
-
-
+		//TODO
 		return null;
 	}
 }

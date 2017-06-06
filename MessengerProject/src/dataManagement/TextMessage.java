@@ -9,7 +9,7 @@ public class TextMessage extends Message{
 		super(date, from, to);
 	}
 
-	void setContent(String content) {
+	public void setContent(String content) {
 		this.content = content;
 	}
 
