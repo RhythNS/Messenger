@@ -370,6 +370,9 @@ public class Client implements Runnable{
 							case "UGM":
 								updateGroupMembers(received);
 								break;
+							case "TIME":
+								timeReceived(received);
+								break;
 							default:
 								break;
 						}
@@ -458,12 +461,6 @@ public class Client implements Runnable{
 	}
 
 	private void dataReceived(String received) {
-<<<<<<< HEAD
-=======
-		String fromTo = getInfo(received);
-		String[] infos = fromTo.split(",");
-		FileOutputStream fileOutputStream = user.dataReceived(Integer.parseInt(infos[0]), Integer.parseInt(infos[1]), getMessage(received), infos[2]);
->>>>>>> 20d8ddcc3f992677428816bbf3786a438245a24b
 		String info = read();
 		byte[] bytes = new byte[Integer.parseInt(getInfo(info))];
 		do {
@@ -488,6 +485,10 @@ public class Client implements Runnable{
 		} while (!getHeader(info).equals("EOT"));
 		String[] fromTo = getInfo(received).split(",");
 		user.dataReceived(Integer.parseInt(fromTo[0]),Integer.parseInt(fromTo[1]), getMessage(received), bytes);
+	}
+
+	private void timeReceived(String received) {
+		String time = getMessage(received);
 	}
 
 	public static void main(String[] args) throws IOException {

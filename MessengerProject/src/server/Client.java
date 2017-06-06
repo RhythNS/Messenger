@@ -200,6 +200,10 @@ public class Client implements Runnable {
 		}
 	}
 
+	public void sendTime(String date) {
+		write("TIME", "", date);
+	}
+
 	@Override
 	public void run() {
 		while (connected) {
