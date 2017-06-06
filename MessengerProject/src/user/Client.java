@@ -14,10 +14,12 @@ public class Client implements Runnable{
 	private final Object userLock = new Object();
 	private User user;
 	private boolean connected;
+	private boolean connectionInUse;
 
 
 	public Client(String host, int port, User user) {
 		socket = new Socket(host, port);
+		connectionInUse = false;
 		this.user = user;
 	}
 
@@ -94,14 +96,14 @@ public class Client implements Runnable{
 		}
 	}
 
-	private boolean send(byte[] bytes,int blockNr) throws IOException {
+	private boolean send(byte[] bytes) throws IOException {
         //todo: Encryption
 		byte checksum = 0;
 		for (byte b:bytes
-			 ) {
+				) {
 			checksum ^= b;
 		}
-		write("Block", blockNr+"", checksum+"");
+		write("DATA", "", checksum+"");
 		socket.getOutputStream().write(bytes);
 		if (getHeader(read()).equals("OK"))
 			return true;
@@ -109,11 +111,6 @@ public class Client implements Runnable{
 			return false;
 	}
 
-	/**
-	 * This method does x
-	 * @param message the sent message
-	 * @return null
-	 */
 	private String getHeader(String message) {
 		return message.split("|", 3)[0];
 	}
@@ -136,42 +133,64 @@ public class Client implements Runnable{
 		return null;
 	}
 
+	/**
+	 * writes a message to an other User
+	 * @param tag tag of the User
+	 * @param message
+	 */
 	public void writeMessage(int tag, String message) {
 		synchronized (userLock) {
 			write("MSG",tag+"",message);
 		}
 	}
 
-	public boolean sendData(int tag,String filename,FileInputStream stream, boolean directConnection) throws IOException {
+	/**
+	 * sends a data stream to an other User
+	 *
+	 * @param tag
+	 * @param filename
+	 * @param stream
+	 * @return returns false if file size is to big
+	 * @throws IOException
+	 */
+	public boolean sendData(int tag, String filename, FileInputStream stream) throws IOException {
 		synchronized (userLock) {
-			if (stream.available() <= 1048576 || directConnection) {
-				write("DATA",tag+"",filename);
-				byte[] bytes = new byte[1024];
-				int counter = 0;
-				while (stream.available() > 0) {
-					stream.read(bytes);
-					while (!send(bytes,counter));
-					counter++;
-				}
-				write("EOT","","");
+			if (stream.available() <= 1048576) {
+				write("DATA", tag + "", filename);
+				byte[] bytes = new byte[stream.available()];
+				stream.read(bytes);
+				while (!send(bytes)) ;
+				write("EOT", "", "");
 				return true;
 			}
 			return false;
 		}
 	}
 
-	public void messageRequest(String date) {
+	/**
+	 * requests message from server from a specific date until now
+	 * @param date
+	 */
+	public void messageRequest(Date date) {
 		synchronized (userLock) {
-			write("MSGR",date,"");
+			String d = date.getYear() + "." + date.getMonth() + "." + date.getDate() + "." + date.getHours() + "." + date.getMinutes() + "." + date.getSeconds();
+			write("MSGR",d,"");
 		}
 	}
 
+	/**
+	 * request an up to date version of the friends list
+	 */
 	public void requestFriendslist() {
 		synchronized (userLock) {
 			write("RFL","","");
 		}
 	}
 
+	/**
+	 * sends the local friends lis to the server
+	 * @param friendList
+	 */
 	public void sendFriendlist(int[] friendList) {
 		synchronized (userLock) {
 			StringBuilder stringBuilder = new StringBuilder();
@@ -183,38 +202,60 @@ public class Client implements Runnable{
 		}
 	}
 
-	public Contact[] searchFriends(String username) {
+	/**
+	 * search for an other User
+	 * @param username
+	 * @return returns a contact if user is found else returns null
+	 */
+	public Contact searchFriends(String username) {
 		synchronized (userLock) {
 			write("SF","",username);
-			String list = read();
-			String[] conatactStrings = getMessage(list).split("(/)");
-			Contact[] contacts = new Contact[conatactStrings.length];
-			for (int i = 0; i < conatactStrings.length; i++) {
-				String[] s = conatactStrings[i].split(",");
-				contacts[i] = new Contact(s[0],Integer.parseInt(s[1]));
-			}
-			return contacts;
+			String response = read();
+			Contact contact = null;
+			if (getHeader(response).equals("OK"))
+				contact = new Contact(username, Integer.parseInt(getMessage(response)));
+			return contact;
 		}
 	}
 
+	/**
+	 * sends a friend request to an other user
+	 * @param tag tag of the User
+	 */
 	public void sendFriendRequest(int tag) {
 		synchronized (userLock) {
 			write("FR", tag + "", "");
 		}
 	}
 
+	/**
+	 * replies a friend request
+	 * @param tag
+	 * @param accept
+	 */
 	public void replyFriendRequest(int tag, boolean accept) {
 		synchronized (userLock) {
 			write("RFR", tag + "", accept + "");
 		}
 	}
 
+	/**
+	 * removes a friend from your friend list and remove you from his friend list
+	 * @param tag
+	 * @param message
+	 */
 	public void removeFriend(int tag, String message) {
 		synchronized (userLock) {
 			write("RF", tag + "", message);
 		}
 	}
 
+	/**
+	 * creates a chat group with other Users
+	 * @param groupName
+	 * @param tags list of other users
+	 * @return
+	 */
 	public int createGroup(String groupName, int[] tags) {
 		synchronized (userLock) {
 			StringBuilder stringBuilder = new StringBuilder();
@@ -227,6 +268,11 @@ public class Client implements Runnable{
 		}
 	}
 
+	/**
+	 * invites a user to your group
+	 * @param groupTag
+	 * @param userTag
+	 */
 	public void groupInvite(int groupTag, int userTag) {
 		synchronized (userLock) {
 			write("GI", groupTag + "", userTag + "");
@@ -254,73 +300,157 @@ public class Client implements Runnable{
 	@Override
 	public void run() {
 		while (connected) {
-			String recieved = read();
-			synchronized (userLock) {
-				switch (getHeader(recieved)) {
-					case "MSG":
-						String fromTo = getInfo(recieved);
-						String[] infos = fromTo.split(",");
-						String[] date = infos[2].split(".");
-						Date d = new Date(Integer.parseInt(date[0]), Integer.parseInt(date[1]), Integer.parseInt(date[2]), Integer.parseInt(date[3]), Integer.parseInt(date[4]), Integer.parseInt(date[5]));
-						user.messageRecieved(Integer.parseInt(infos[0]), Integer.parseInt(infos[1]), getMessage(recieved),d);
-						break;
-					case "DATA":
-						fromTo = getInfo(recieved);
-						infos = fromTo.split(",");
-						date = infos[2].split(".");
-						d = new Date(Integer.parseInt(date[0]), Integer.parseInt(date[1]), Integer.parseInt(date[2]), Integer.parseInt(date[3]), Integer.parseInt(date[4]), Integer.parseInt(date[5]));
-						FileOutputStream fileOutputStream = user.dataReceived(Integer.parseInt(infos[0]), Integer.parseInt(infos[1]), getMessage(recieved), d);
-						String info = read();
-						do {
-							byte[] bytes = new byte[1024];
-							byte checkSumme = Byte.parseByte(getMessage(info));
-							do {
-								try {
-									socket.read(bytes, 1024);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-								for (byte b : bytes
-										) {
-									checkSumme ^= b;
-								}
-								if (checkSumme == 0) {
-									write("OK","","");
-								}else
-									write("NOK","","");
-							} while (checkSumme != 0);
-							try {
-								fileOutputStream.write(bytes);
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
-							info = read();
-						} while (!getHeader(info).equals("EOT"));
-						try {
-							fileOutputStream.close();
-						} catch (IOException e) {
-							e.printStackTrace();
+			try {
+				if (socket.dataAvailable() > 0 && !connectionInUse) {
+					String received = read();
+					synchronized (userLock) {
+						switch (getHeader(received)) {
+							case "MSG":
+								messageReceived(received);
+								break;
+							case "DATA":
+								dataReceived(received);
+								break;
+							case "FR":
+								friendRequestReceived(received);
+								break;
+							case "SFL":
+								friendListReceived(received);
+								break;
+							case "SPL":
+								pendingListReceived(received);
+								break;
+							case "SRL":
+								requestListReceived(received);
+								break;
+							case "GI":
+								invitedToGroup(received);
+								break;
+							case "PGL":
+								promotedToGroupLeader(received);
+								break;
+							case "RF":
+								friendRemoved(received);
+								break;
+							case "RFR":
+								friendRequestReplied(received);
+								break;
+							case "UGM":
+								updateGroupMembers(received);
+								break;
+							default:
+								break;
 						}
-						break;
-					case "FR":
-						break;
-					case "SFL":
-						break;
-					case "GI":
-						break;
-					case "PGL":
-						break;
-					case "RF":
-						break;
-					case "RFR":
-						break;
-					case "UGM":
-						break;
-					default:
-						break;
-				}
+					}
+                }
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
+	private void updateGroupMembers(String received) {
+		int groupTag = Integer.parseInt(getInfo(received));
+		String[] members = getMessage(received).split(",");
+		int[] tags = new int[members.length];
+		for (int i = 0; i < members.length; i++) {
+			tags[i] = Integer.parseInt(members[i]);
+		}
+	}
+
+	private void friendRequestReplied(String received) {
+		int tag = Integer.parseInt(getInfo(received));
+		boolean accept = Boolean.parseBoolean(getMessage(received));
+	}
+
+	private void friendRemoved(String received) {
+		int tag = Integer.parseInt(getInfo(received));
+	}
+
+	private void promotedToGroupLeader(String received) {
+		int groupTag = Integer.parseInt(getInfo(received));
+	}
+
+	private void invitedToGroup(String received) {
+		int groupTag = Integer.parseInt(getInfo(received));
+		String groupName = getMessage(received);
+		updateGroupMembers(read());
+	}
+
+	private void friendListReceived(String received) {
+		String[] friends = getMessage(received).split(",");
+		int[] tags = new int[friends.length];
+		for (int i = 0; i < friends.length; i++) {
+			tags[i] = Integer.parseInt(friends[i]);
+		}
+	}
+
+	private void pendingListReceived(String received) {
+		String[] friends = getMessage(received).split(",");
+		int[] tags = new int[friends.length];
+		for (int i = 0; i < friends.length; i++) {
+			tags[i] = Integer.parseInt(friends[i]);
+		}
+	}
+
+	private void requestListReceived(String received) {
+		String[] friends = getMessage(received).split(",");
+		int[] tags = new int[friends.length];
+		for (int i = 0; i < friends.length; i++) {
+			tags[i] = Integer.parseInt(friends[i]);
+		}
+	}
+
+	private void friendRequestReceived(String received) {
+		int userName = Integer.parseInt(getInfo(received));
+		String username = getMessage(received);
+	}
+
+	private void messageReceived(String received) {
+		String fromTo = getInfo(received);
+		String[] infos = fromTo.split(",");
+		user.messageRecieved(Integer.parseInt(infos[0]), Integer.parseInt(infos[1]), getMessage(received),infos[2]);
+	}
+
+	private void dataReceived(String received) {
+		String fromTo = getInfo(received);
+		String[] infos = fromTo.split(",");
+		FileOutputStream fileOutputStream = user.dataRecieved(Integer.parseInt(infos[0]), Integer.parseInt(infos[1]), getMessage(received), infos[2]);
+		String info = read();
+		do {
+			byte[] bytes = new byte[Integer.parseInt(getInfo(info))];
+			byte checkSumme = Byte.parseByte(getMessage(info));
+			do {
+				try {
+					socket.read(bytes, bytes.length);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				for (byte b : bytes
+						) {
+					checkSumme ^= b;
+				}
+				if (checkSumme == 0) {
+					write("OK","","");
+				}else
+					write("NOK","","");
+			} while (checkSumme != 0);
+			try {
+				fileOutputStream.write(bytes);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			info = read();
+		} while (!getHeader(info).equals("EOT"));
+		try {
+			fileOutputStream.close();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -328,5 +458,6 @@ public class Client implements Runnable{
 		User user = new User("Horst");
 		Client client = new Client("localhost", 1234, user);
 		client.login(1256, "password", 5);
+		client.writeMessage(1234,"lol");
 	}
 }
