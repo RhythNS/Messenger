@@ -3,7 +3,6 @@ package user;
 import socketio.Socket;
 
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.PublicKey;
 
@@ -459,12 +458,9 @@ public class Client implements Runnable{
 	}
 
 	private void dataReceived(String received) {
-		String fromTo = getInfo(received);
-		String[] infos = fromTo.split(",");
-		FileOutputStream fileOutputStream = user.dataRecieved(Integer.parseInt(infos[0]), Integer.parseInt(infos[1]), getMessage(received), infos[2]);
 		String info = read();
+		byte[] bytes = new byte[Integer.parseInt(getInfo(info))];
 		do {
-			byte[] bytes = new byte[Integer.parseInt(getInfo(info))];
 			byte checkSumme = Byte.parseByte(getMessage(info));
 			do {
 				try {
@@ -472,6 +468,7 @@ public class Client implements Runnable{
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				//Todo: decryption
 				for (byte b : bytes
 						) {
 					checkSumme ^= b;
@@ -481,18 +478,10 @@ public class Client implements Runnable{
 				}else
 					write("NOK","","");
 			} while (checkSumme != 0);
-			try {
-				fileOutputStream.write(bytes);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
 			info = read();
 		} while (!getHeader(info).equals("EOT"));
-		try {
-			fileOutputStream.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		String[] fromTo = getInfo(received).split(",");
+		user.dataReceived(Integer.parseInt(fromTo[0]),Integer.parseInt(fromTo[1]), getMessage(received), bytes);
 	}
 
 	public static void main(String[] args) throws IOException {

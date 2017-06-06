@@ -278,10 +278,11 @@ public class Client implements Runnable {
 			byte checkSumme = Byte.parseByte(getMessage(info));
 			do {
 				try {
-					socket.read(bytes, 1024);
+					socket.read(bytes, bytes.length);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				//Todo: decryption
 				for (byte b : bytes
 						) {
 					checkSumme ^= b;
