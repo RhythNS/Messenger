@@ -5,7 +5,6 @@ import dataManagement.Logger;
 import dataManagement.Mailbox;
 import dataManagement.Message;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -44,13 +43,13 @@ public class Account {
 	 * @param date
 	 * @param whoGotIt
 	 */
-	void dataReceived(int from, String message,String date, Client whoGotIt) {
-		String filename = message.split("\n")[0];
+	void dataReceived(int from, byte[] message,String date, Client whoGotIt) {
 
 		for(Client c: clients){
 			if(!whoGotIt.equals(c)){
 				try {
-					c.sendData(from, tag,date,filename,message.getBytes());
+					//TODO FILENAME NEEDS TO BE ADDED
+					c.sendData(from, tag,date,"filename",message);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -60,7 +59,7 @@ public class Account {
 	}
 
 
-	public void requestMessage(Client sender,String date){
+	void requestMessage(Client sender, String date){
 		Mailbox mb = server.requestMessage(this, date);
 
 		if(mb == null)return;
@@ -80,7 +79,7 @@ public class Account {
 		}
 	}
 
-	public void disconnect(Client client, int deviceNumber){
+	void disconnect(Client client, int deviceNumber){
 		if(clients.remove(client)) {
 			server.disconnectDevice(deviceNumber,this);
 			if(clients.size()== 0){

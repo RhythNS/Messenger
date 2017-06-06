@@ -209,11 +209,11 @@ public class Server {
 		}
 	}
 
-	void disconnectDevice(int deviceNumber, Account account) {
-		dataMangement.logout(account.getTag(),deviceNumber,false);
+	void disconnectDevice(int deviceNumber, Account account, boolean timeout) {
+		dataMangement.logout(account.getTag(),deviceNumber,timeout);
 	}
 
-	public void dataRecieved(int from, int toAcc, String message, String date) {
+	void dataRecieved(int from, int toAcc, byte[] message, String date) {
 		String encrypted = Encrypter.encryptSynchron(message,secretKey);
 		dataMangement.saveFile(from,toAcc,date,encrypted);
 	}
