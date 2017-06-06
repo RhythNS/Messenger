@@ -47,11 +47,12 @@ public class Decrypter {
         }
         byte[] decrypted = decrypt(toDecodebytes, key, RSA);
 
-        StringBuilder s = new StringBuilder();
-        for(int i = 0; i < decrypted.length;i++){
-            s.append((char) (decrypted[i]));
+        try {
+            return new String(decrypted,"UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
         }
-        return s.toString();
+        return null;
     }
 
     public static byte[] decryptSynchronToBytes(String toDecrypt, Key key){
@@ -72,7 +73,6 @@ public class Decrypter {
      * @return the decoded String
      */
     public static String decryptSynchronToString(String toDecrypt, Key key){
-        StringBuilder s = new StringBuilder();
         BASE64Decoder decoder = new BASE64Decoder();
         byte[] decodedbytes = new byte[0];
         try {
@@ -90,10 +90,19 @@ public class Decrypter {
         return null;
     }
 
-    private static byte[] decrypt(byte[] decrypt,Key  key,String verfahren){
+    /**
+     * Main Methode to decrypt: Will decrypt the byte Array
+     * to an byte Array with the String parameter
+     *
+     * @param decrypt   is the byteArray which needs to get decrypted
+     * @param key       is the SecretKey or the PublicKey to decrypt
+     * @param algorythm is the algorythm RSA or AES
+     * @return          the decryted byteArray
+     */
+    private static byte[] decrypt(byte[] decrypt,Key  key,String algorythm){
         byte[] res = null;
         try {
-            cipher = Cipher.getInstance(verfahren);
+            cipher = Cipher.getInstance(algorythm);
             cipher.init(Cipher.DECRYPT_MODE,key);
             res = cipher.doFinal(decrypt);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
