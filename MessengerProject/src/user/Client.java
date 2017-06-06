@@ -75,6 +75,7 @@ public class Client implements Runnable{
 		String response = read();
 
 		if (getHeader(response).equals("OK")) {
+			user.setDeviceNumber(Integer.parseInt(getInfo(response)));
 			connected = true;
 			Thread t = new Thread(this);
 			t.start();
@@ -85,10 +86,19 @@ public class Client implements Runnable{
 		return false;
 	}
 
+	public void disconnect() {
+		write("D","","");
+		try {
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	private void write(String header, String info, String message) {
 		//todo: Encryption
 		try {
-			socket.write(header+"|"+info+"|"+message+"\n");
+			socket.write(header+"/"+info+"/"+message+"\n");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -110,15 +120,15 @@ public class Client implements Runnable{
 	}
 
 	private String getHeader(String message) {
-		return message.split("|", 3)[0];
+		return message.split("/", 3)[0];
 	}
 
 	private String getInfo(String message) {
-		return message.split("|", 3)[1];
+		return message.split("/", 3)[1];
 	}
 
 	private String getMessage(String message) {
-		return message.split("|", 3)[2];
+		return message.split("/", 3)[2];
 	}
 
 	private String read() {
@@ -328,6 +338,7 @@ public class Client implements Runnable{
 
 	@Override
 	public void run() {
+		int counter = 0;
 		while (connected) {
 			try {
 				if (socket.dataAvailable() > 0 && !connectionInUse) {
@@ -373,6 +384,15 @@ public class Client implements Runnable{
 							case "TIME":
 								timeReceived(received);
 								break;
+							case "PONG":
+								break;
+							case "PING":
+								write("PONG", "", "");
+								break;
+							case "D":
+								socket.close();
+								user.disconnect();
+								break;
 							default:
 								break;
 						}
@@ -380,11 +400,18 @@ public class Client implements Runnable{
                 }
 			} catch (IOException e) {
 				e.printStackTrace();
+				//TODO: connection lost
+				connected = false;
 			}
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
+			}
+			counter++;
+			if (counter > 500) {
+				counter = 0;
+				write("PING","","");
 			}
 		}
 	}

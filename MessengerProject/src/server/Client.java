@@ -20,10 +20,10 @@ public class Client implements Runnable {
 	public Client(Socket socket, Server server) throws IOException {
 		this.socket = socket;
 		connectionInUse = false;
-		authentification(server);
+		authentication(server);
 	}
 
-	private void authentification(Server server) throws IOException {
+	private void authentication(Server server) throws IOException {
 		/*
 		//todo: Generate public and private key
 		PublicKey userPublicKey;
@@ -65,15 +65,15 @@ public class Client implements Runnable {
 	}
 
 	private String getHeader(String message) {
-		return message.split("|", 3)[0];
+		return message.split("/", 3)[0];
 	}
 
 	private String getInfo(String message) {
-		return message.split("|", 3)[1];
+		return message.split("/", 3)[1];
 	}
 
 	private String getMessage(String message) {
-		return message.split("|", 3)[2];
+		return message.split("/", 3)[2];
 	}
 
 	private String read() {
@@ -89,7 +89,7 @@ public class Client implements Runnable {
 	private void write(String header, String info, String message) {
 		//todo: Encryption
 		try {
-			socket.write(header+"|"+info+"|"+message+"\n");
+			socket.write(header+"/"+info+"/"+message+"\n");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -204,8 +204,19 @@ public class Client implements Runnable {
 		write("TIME", "", date);
 	}
 
+	public void disconnect() {
+		write("D", "", "");
+		try {
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		account.disconnect(this, this.deviceNr);
+	}
+
 	@Override
 	public void run() {
+		int counter = 0;
 		while (connected) {
 			try {
 				if (socket.dataAvailable() > 0&&!connectionInUse) {
@@ -254,6 +265,13 @@ public class Client implements Runnable {
 							case "MR":
 								requestMailbox(received);
 								break;
+							case "PONG":
+								break;
+							case "PING":
+								write("PONG", "", "");
+								break;
+							case "D":
+
 							default:
 								break;
 						}
@@ -261,18 +279,33 @@ public class Client implements Runnable {
                 }
 			} catch (IOException e) {
 				e.printStackTrace();
+				//TODO: connection lost
+				connected = false;
 			}
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-
+			counter++;
+			if (counter > 500) {
+				counter = 0;
+				write("PING","","");
+			}
 		}
 	}
 
+	private void disconnected() {
+		try {
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		account.disconnect(this,this.deviceNr);
+	}
+
 	private void messageReceived(String received) {
-		account.recieveMessage(Integer.parseInt(getInfo(received)), getMessage(received), this);
+		account.receiveMessage(Integer.parseInt(getInfo(received)), getMessage(received), this);
 	}
 
 	private void dataReceived(String received) {

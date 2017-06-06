@@ -9,6 +9,23 @@ import java.util.Date;
 public class DateCalc {
 
 	private static SimpleDateFormat forDay = new SimpleDateFormat("HHmmss"), forYear = new SimpleDateFormat("yyyyMMdd");
+	private static final Object calendarLock = new Object();
+
+	public static void setOfSet(String date) {
+		synchronized (calendarLock) {
+			SimpleDateFormat wholeYear = new SimpleDateFormat("yyyyMMddHHmmss");
+			Date serverDate = null;
+			try {
+				serverDate = wholeYear.parse(date);
+			} catch (ParseException e) {
+				System.err.println(" #BlameBene");
+				e.printStackTrace();
+			}
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(serverDate);
+			cal.getTimeZone();
+		}
+	}
 
 	public static String getForYearDate() {
 		return forYear.format(new Date());
@@ -18,17 +35,18 @@ public class DateCalc {
 		return null;
 	}
 	public synchronized static String getNextDay(String currentDay) {
-		Calendar cal = Calendar.getInstance();
-		try {
-			cal.setTime(forYear.parse(currentDay));
-		} catch (ParseException e) {
-			System.err.println("Could not parse the date! #BlameBene");
-			e.printStackTrace();
-			return null;
+		synchronized (calendarLock) {
+			Calendar cal = Calendar.getInstance();
+			try {
+				cal.setTime(forYear.parse(currentDay));
+			} catch (ParseException e) {
+				System.err.println("Could not parse the date! #BlameBene");
+				e.printStackTrace();
+				return null;
+			}
+			cal.add(Calendar.DATE, 1);
+			return forYear.format(cal.getTime());
 		}
-		cal.add(Calendar.DATE, 1);
-		return forYear.format(cal.getTime());
-
 	}
 
 	public static String[] sort(File[] files) {
@@ -67,6 +85,20 @@ public class DateCalc {
 			e.printStackTrace();
 		}
 		return false;
+	}
+
+	public static void main(String[] args) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(new Date());
+		SimpleDateFormat wholeYear = new SimpleDateFormat("yyyyMMddHHmmss");
+		System.out.println(wholeYear.format(cal.getTime()));
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println(wholeYear.format(cal.getTime()));
 	}
 
 }
