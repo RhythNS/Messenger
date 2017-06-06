@@ -31,6 +31,10 @@ public class FriendList extends ListFiles {
 		return set(tag, position, "");
 	}
 
+	boolean inList(int tag, int friendTag) {
+		return find(tag, Integer.toString(friendTag, Character.MAX_RADIX)) != -1;
+	}
+
 	int[] getFriends(int tag) {
 		String[] friends = getAll(tag);
 		ArrayList<Integer> tags = new ArrayList<>();

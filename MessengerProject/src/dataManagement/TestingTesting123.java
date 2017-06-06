@@ -367,7 +367,7 @@ public class TestingTesting123 {
 		case GET_MESSAGES:
 			Mailbox mb = dm.getMessages(1, "20170604200000");
 			for (int i = 0; i < mb.messageSize(); i++) {
-				TextMessage tm = mb.getMessage(i);
+				Message tm = mb.getMessage(i);
 				System.out.println(tm.from + "->" + tm.to + " " + tm.date + ": " + tm.getContent());
 			}
 			break;

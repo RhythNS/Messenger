@@ -4,19 +4,23 @@ import java.util.ArrayList;
 
 public class Mailbox {
 
-	ArrayList<TextMessage> messages;
-	ArrayList<FileMessage> files;
+	ArrayList<Message> messages;
+	ArrayList<Message> files;
+	ArrayList<Integer> friends, requests, pending;
 
 	Mailbox() {
 		messages = new ArrayList<>();
 		files = new ArrayList<>();
+		friends = new ArrayList<>();
+		requests = new ArrayList<>();
+		pending = new ArrayList<>();
 	}
 
-	public TextMessage getMessage(int i) {
+	public Message getMessage(int i) {
 		return messages.get(i);
 	}
 
-	public FileMessage getFile(int i) {
+	public Message getFile(int i) {
 		return files.get(i);
 	}
 

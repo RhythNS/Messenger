@@ -1,7 +1,10 @@
 package dataManagement;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
@@ -46,8 +49,42 @@ public class FileManager {
 		return success;
 	}
 
-	File getFile(String name) {
-		return new File(dir, name + ".file");
+	String getFile(String name) {
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new FileReader(new File(dir, name + ".file")));
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		String input = "";
+		try {
+			input = br.readLine();
+			if (input == null) {
+				Logger.getInstance().log("Error FM6: Could not read. File is null! #BlameBene");
+				return null;
+			}
+			do {
+				input += '\n';
+				input = br.readLine();
+			} while (input != null);
+		} catch (IOException e) {
+			Logger.getInstance().log("Error FM4: Could not read! #BlameBene");
+			e.printStackTrace();
+			try {
+				br.close();
+			} catch (IOException e1) {
+				Logger.getInstance().log("Error FM5: Could not close the reader! #BlameBene");
+				e1.printStackTrace();
+			}
+			return null;
+		}
+		try {
+			br.close();
+		} catch (IOException e) {
+			Logger.getInstance().log("Error FM6: Could not close the reader! #BlameBene");
+			e.printStackTrace();
+		}
+		return input;
 	}
 
 }

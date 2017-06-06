@@ -7,6 +7,7 @@ import server.Constants;
 
 /**
  * The stuff that Noah did <(^_^<
+ *
  * @author RhythNS_
  */
 public class DataManagement {
@@ -17,7 +18,7 @@ public class DataManagement {
 	 */
 	private ArgumentRandomAccessFile usersArgument;
 	private BinaryTreeFile usersTree;
-	private FriendList friendList, usersGroupList;
+	private FriendList friendList, usersGroupList, pendingList, requestList;
 	private File userDir;
 
 	// GROUP stuff:
@@ -70,6 +71,8 @@ public class DataManagement {
 		usersTree = new BinaryTreeFile(new File(userDir, "binaryTree.txt"), Constants.MAX_USERNAME_SIZE);
 		friendList = new FriendList(new File(userDir, "friendlist.txt"));
 		usersGroupList = new FriendList(new File(userDir, "grouplist.txt"));
+		pendingList = new FriendList(new File(userDir, "pendinglist.txt"));
+		requestList = new FriendList(new File(userDir, "requestlist.txt"));
 
 		groupArguments = new ArgumentRandomAccessFile(new File(groupDir, "arguments.txt"), Constants.MAX_GROUP_NAME);
 		groupTree = new BinaryTreeFile(new File(groupDir, "tree.txt"), Constants.MAX_GROUP_NAME);
@@ -189,8 +192,17 @@ public class DataManagement {
 	 */
 	public boolean addFriend(int tag, int befriendedTag) {
 		synchronized (usersLock) {
-			if (tag > 0 && befriendedTag > 0)
-				return friendList.addFriend(tag, befriendedTag);
+			if (tag > 0 && befriendedTag > 0) {
+				if (pendingList.inList(befriendedTag, tag)) {
+					pendingList.deleteFriend(befriendedTag, tag);
+					requestList.deleteFriend(tag, befriendedTag);
+					friendList.addFriend(tag, befriendedTag);
+					return friendList.addFriend(befriendedTag, tag);
+				} else {
+					pendingList.addFriend(tag, befriendedTag);
+					requestList.addFriend(befriendedTag, tag);
+				}
+			}
 			return false;
 		}
 	}
@@ -205,8 +217,18 @@ public class DataManagement {
 	 */
 	public boolean removeFriend(int tag, int removedFriend) {
 		synchronized (usersLock) {
-			if (tag > 0 && removedFriend > 0)
-				return friendList.deleteFriend(tag, removedFriend);
+			if (tag > 0 && removedFriend > 0) {
+				if (friendList.inList(tag, removedFriend)) {
+					friendList.deleteFriend(removedFriend, tag);
+					return friendList.deleteFriend(tag, removedFriend);
+				} else if (pendingList.inList(tag, removedFriend)) {
+					pendingList.deleteFriend(tag, removedFriend);
+					return requestList.deleteFriend(removedFriend, tag);
+				} else {
+					pendingList.deleteFriend(removedFriend, tag);
+					return requestList.deleteFriend(tag, removedFriend);
+				}
+			}
 			return false;
 		}
 	}
@@ -487,7 +509,20 @@ public class DataManagement {
 	public Mailbox getMessages(int tag, String date) {
 		if (tag > 0 && date != null && date.length() != 0) {
 			int[] groupTags = getGroupTags(tag);
-			return messageDirector.getMessages(tag, date, groupTags);
+			Mailbox mb = messageDirector.getMessages(tag, date, groupTags);
+			int[] tags = pendingList.getFriends(tag);
+			if (tags != null)
+				for (int i = 0; i < tags.length; i++)
+					mb.pending.add(tags[i]);
+			tags = requestList.getFriends(tag);
+			if (tags != null)
+				for (int i = 0; i < tags.length; i++)
+					mb.requests.add(tags[i]);
+			tags = friendList.getFriends(tag);
+			if (tags != null)
+				for (int i = 0; i < tags.length; i++)
+					mb.friends.add(tags[i]);
+			return mb;
 		}
 		return null;
 	}

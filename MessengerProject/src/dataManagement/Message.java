@@ -1,9 +1,11 @@
 package dataManagement;
 
-public abstract class Message {
+public class Message {
 
 	int from, to;
+	long pointerFrom, pointerTo;
 	String date;
+	String content;
 
 	public Message(String date, int from, int to) {
 		this.date = date;
@@ -23,4 +25,11 @@ public abstract class Message {
 		return date;
 	}
 
+	public String getContent() {
+		return content;
+	}
+
+	public void setContent(String content) {
+		this.content = content;
+	}
 }

@@ -65,7 +65,7 @@ public class MessageIO {
 		}
 	}
 
-	TextMessage read(TextMessage msg) {
+	Message read(Message msg) {
 		try {
 			raf.seek(msg.pointerFrom);
 		} catch (IOException e) {
