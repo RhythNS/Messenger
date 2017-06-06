@@ -14,8 +14,9 @@ public class Group {
 	private ArrayList<Contact> groupList;
 	private Chat chat;
 	
-	public Group(String groupName,ArrayList<Contact> groupList){
+	public Group(int groupTag, String groupName,ArrayList<Contact> groupList){
 		this.groupName=groupName;
+		this.tag=groupTag;
 		this.admin=groupList.get(0);
 		this.groupList=groupList;
 		this.chat=new Chat(this);

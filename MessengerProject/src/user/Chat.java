@@ -51,8 +51,6 @@ public class Chat {
 	}
 	//TODO Persistenz
 	public void fetchMessages(int count){
-		//Loading from persistenz 
-		//Than add 
 		
 	}
 	public void saveMessages(){

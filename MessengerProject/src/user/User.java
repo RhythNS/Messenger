@@ -3,6 +3,8 @@ package user;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -16,41 +18,41 @@ public class User {
 	private int deviceNumber;
 	public FileOutputStream fos;
 	private int tag;
+	private ArrayList<Contact> pendingFriendrequest=new ArrayList<Contact>();
+	private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
 	public User(String name) {
 		this.username = name;
-	}
-
-	public ArrayList<Chat> getAllChats() {
-		return null;
 	}
 
 	public void setDeviceNumber(int nr) {
 		this.deviceNumber = nr;
 	}
 
-	/*
-	 * request friendship, "recieve" friendlist, remove friend, accept friend
-	 * 
-	 * group invite, promote group leader, leave group, update groupmember
-	 * 
-	 * Alles was empfangen wird benötigt Methode
-	 */
-
-	public boolean replyFriendRequest(int tag, boolean accept) {
-		if (accept) {
+	public boolean replyFriendRequest(int tag, boolean reply) {
+		if (reply) {
 			System.out.println("You've got a new friend");
 			return friendlist.add(new Contact(username, tag));
 
 		}
 		System.out.println("Friendship declined");
-		return accept;
+		return reply;
+	}
+	public boolean getFriendreply(int tag,boolean reply){
+		for (Contact c : pendingFriendrequest) {
+			if(tag==c.getTag()){
+				pendingFriendrequest.remove(c);
+				return friendlist.add(c);
+			}
+		}
+		return reply;
 	}
 
 	public void requestFriendship(int tag, String username) {
-		// if(client.sendFriendRequest(tag){
-
-		// }
+		if (tag!=0&&username!=null) {
+			Contact friend=new Contact(username,tag);
+			pendingFriendrequest.add(friend);
+		}
 	}
 
 	public void recieveFriendlist(ArrayList<Contact> friendlist) {
@@ -105,7 +107,14 @@ public class User {
 		client.writeMessage(tag, message);
 	}
 
-	public void messageRecieved(int empf, int sender, String message, Date date) {
+	public void messageRecieved(int sender, int empf, String message, String givenDate) {
+		Date date=null;
+		try {
+			date = dateFormat.parse(givenDate);
+		} catch (ParseException e) {
+			System.err.println("Could not parse the date!");
+			e.printStackTrace();
+		}
 		if (sender == tag && empf > 0) {
 			// Nachricht an Kontakt
 			Contact c = searchUserInFriendlist(empf);
@@ -136,13 +145,13 @@ public class User {
 
 	}
 
-	public FileOutputStream dataRecieved(int empf, int send, String filename) {
+	public FileOutputStream dataRecieved(int send, int empf, String filename,Date date) {
 		return fos;
 	}
 
-	public void sendData(int tag, String filename, FileInputStream stream, boolean directConnection) {
+	public void sendData(int tag, String filename, FileInputStream stream) {
 		try {
-			client.sendData(tag, filename, stream, directConnection);
+			client.sendData(tag, filename, stream);
 		} catch (IOException e) {
 			System.err.println("Sending data failed #BlameBenós");
 			e.printStackTrace();
@@ -171,7 +180,7 @@ public class User {
 	// Gruppen Zeug
 
 	public void groupInvite(int groupTag, String groupName, ArrayList<Contact> groupList) {
-		Group g = new Group(groupName, groupList);
+		Group g = new Group(groupTag,groupName, groupList);
 		groups.add(g);
 	}
 
@@ -216,7 +225,7 @@ public class User {
 		return null;
 	}
 
-	public boolean löschenGroup(Group Group) {
+	public boolean deleteGroup(Group Group) {
 		if (groups.contains(Group)) {
 			return groups.remove(Group);
 		}
@@ -224,7 +233,7 @@ public class User {
 		return false;
 	}
 
-	public boolean GroupUmbenennen(int tag, String neuerName) {
+	public boolean renameGroup(int tag, String neuerName) {
 		Group result = searchGroupInGrouplist(tag);
 		if (result != null) {
 			result.setGroupName(neuerName);
