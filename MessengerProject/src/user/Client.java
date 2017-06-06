@@ -12,12 +12,10 @@ public class Client implements Runnable{
 	private final Object userLock = new Object();
 	private User user;
 	private boolean connected;
-	private boolean connectionInUse;
 
 
 	public Client(String host, int port, User user) {
 		socket = new Socket(host, port);
-		connectionInUse = false;
 		this.user = user;
 	}
 
@@ -28,7 +26,7 @@ public class Client implements Runnable{
 	/**
 	 * Returns 0 if the registration process failed. Otherwise the tag is returned
 	 */
-	public int register(String username, String password) throws IOException {
+	public int register(String username, String password, String color) throws IOException {
 		if(!connect()) {
 			System.err.println("Could not connect!");
 			return 0;
@@ -41,7 +39,7 @@ public class Client implements Runnable{
 		// TODO: decode Key
 		// TODO: generate synchronised Key
 
-		write("REG", -1+"",username + "," + password);
+		write("REG", color,username + "," + password);
 
 		String response = read();
 
@@ -55,7 +53,7 @@ public class Client implements Runnable{
 		return 0;
 	}
 
-	public boolean login(int tag, String password,int deviceNr) throws IOException {
+	public boolean login(String username, String password,int deviceNr) throws IOException {
 		if(!connect()) {
 			System.err.println("Could not connect!");
 			return false;
@@ -71,7 +69,7 @@ public class Client implements Runnable{
 
 		// TODO HASH PASSWORD
 		*/
-		write("LOG", deviceNr+"", tag+","+password);
+		write("LOG", deviceNr+"", username+","+password);
 		String response = read();
 
 		if (getHeader(response).equals("OK")) {
@@ -341,63 +339,65 @@ public class Client implements Runnable{
 		int counter = 0;
 		while (connected) {
 			try {
-				if (socket.dataAvailable() > 0 && !connectionInUse) {
-					String received = read();
-					synchronized (userLock) {
-						switch (getHeader(received)) {
-							case "MSG":
-								messageReceived(received);
-								break;
-							case "DATA":
-								dataReceived(received);
-								break;
-							case "FR":
-								friendRequestReceived(received);
-								break;
-							case "SFL":
-								friendListReceived(received);
-								break;
-							case "SPL":
-								pendingListReceived(received);
-								break;
-							case "SRL":
-								requestListReceived(received);
-								break;
-							case "SGL":
-								groupListReceived(received);
-								break;
-							case "GI":
-								invitedToGroup(received);
-								break;
-							case "PGL":
-								promotedToGroupLeader(received);
-								break;
-							case "RF":
-								friendRemoved(received);
-								break;
-							case "RFR":
-								friendRequestReplied(received);
-								break;
-							case "UGM":
-								updateGroupMembers(received);
-								break;
-							case "TIME":
-								timeReceived(received);
-								break;
-							case "PONG":
-								break;
-							case "PING":
-								write("PONG", "", "");
-								break;
-							case "D":
-								socket.close();
-								user.disconnect();
-								break;
-							default:
-								break;
+				synchronized (userLock) {
+					if (socket.dataAvailable() > 0) {
+						String received = read();
+						synchronized (userLock) {
+							switch (getHeader(received)) {
+								case "MSG":
+									messageReceived(received);
+									break;
+								case "DATA":
+									dataReceived(received);
+									break;
+								case "FR":
+									friendRequestReceived(received);
+									break;
+								case "SFL":
+									friendListReceived(received);
+									break;
+								case "SPL":
+									pendingListReceived(received);
+									break;
+								case "SRL":
+									requestListReceived(received);
+									break;
+								case "SGL":
+									groupListReceived(received);
+									break;
+								case "GI":
+									invitedToGroup(received);
+									break;
+								case "PGL":
+									promotedToGroupLeader(received);
+									break;
+								case "RF":
+									friendRemoved(received);
+									break;
+								case "RFR":
+									friendRequestReplied(received);
+									break;
+								case "UGM":
+									updateGroupMembers(received);
+									break;
+								case "TIME":
+									timeReceived(received);
+									break;
+								case "PONG":
+									break;
+								case "PING":
+									write("PONG", "", "");
+									break;
+								case "D":
+									socket.close();
+									user.disconnect();
+									break;
+								default:
+									break;
+							}
 						}
 					}
-                }
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 				//TODO: connection lost
@@ -511,7 +511,7 @@ public class Client implements Runnable{
 			info = read();
 		} while (!getHeader(info).equals("EOT"));
 		String[] fromTo = getInfo(received).split(",");
-		user.dataReceived(Integer.parseInt(fromTo[0]),Integer.parseInt(fromTo[1]), getMessage(received), bytes);
+		user.dataReceived(Integer.parseInt(fromTo[0]),Integer.parseInt(fromTo[1]), getMessage(received), bytes, fromTo[2]);
 	}
 
 	private void timeReceived(String received) {
@@ -521,7 +521,7 @@ public class Client implements Runnable{
 	public static void main(String[] args) throws IOException {
 		User user = new User("Horst");
 		Client client = new Client("localhost", 1234, user);
-		client.login(1256, "password", 5);
+		client.login("Horst", "password", 5);
 		client.writeMessage(1234,"lol");
 	}
 }

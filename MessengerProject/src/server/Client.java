@@ -15,12 +15,11 @@ public class Client implements Runnable {
 	private Account account;
 	private boolean connected;
 	private int deviceNr;
-	boolean connectionInUse;
 
 	public Client(Socket socket, Server server) throws IOException {
 		this.socket = socket;
-		connectionInUse = false;
 		authentication(server);
+		deviceNr = -1;
 	}
 
 	private void authentication(Server server) throws IOException {
@@ -40,14 +39,14 @@ public class Client implements Runnable {
 		String login = read();
 		String[] usernamePassword = getMessage(login).split(",");
 		if (getHeader(login).equals("REG")) {
-			account = server.registerUser(usernamePassword[0],usernamePassword[1]);
+			account = server.registerUser(usernamePassword[0],usernamePassword[1],getInfo(login));
 		}else {
-			account = server.loginAccount(Integer.parseInt(usernamePassword[0]),usernamePassword[1]);
+			account = server.loginAccount(usernamePassword[0],usernamePassword[1]);
+			deviceNr = Integer.parseInt(getInfo(login));
 		}
 
 		if (account != null) {
-
-			deviceNr = Integer.parseInt(getInfo(login));
+			account.addClient(this);
 
 			//TODO verändert bitte prüfen
 			DeviceLogin deviceLogin = server.diviceLogin(account.getTag(),deviceNr);		//
@@ -119,7 +118,7 @@ public class Client implements Runnable {
 	public boolean sendData(int from, int to, String date, String filename, byte[] data) throws IOException {
 		synchronized (userLock) {
 			if (data.length <= 1048576) {
-				write("DATA", from + "," + to + "," + data, filename);
+				write("DATA", from + "," + to + "," + date, filename);
 				while (!send(data));
 				write("EOT", "", "");
 				return true;
@@ -206,12 +205,13 @@ public class Client implements Runnable {
 
 	public void disconnect() {
 		write("D", "", "");
+		connected = false;
 		try {
 			socket.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		account.disconnect(this, this.deviceNr);
+		account.disconnect(this, this.deviceNr, false);
 	}
 
 	@Override
@@ -219,68 +219,69 @@ public class Client implements Runnable {
 		int counter = 0;
 		while (connected) {
 			try {
-				if (socket.dataAvailable() > 0&&!connectionInUse) {
-					String received = read();
-					synchronized (userLock) {
-						switch (getHeader(received)) {
-							case "MSG":
-								messageReceived(received);
-								break;
-							case "DATA":
-								dataReceived(received);
-								break;
-							case "RFL":
-								friendListRequested(received);
-								break;
-							case "SFL":
-								friendListReceived(received);
-								break;
-							case "SU":
-								searchUser(received);
-								break;
-							case "SFR":
-								friendshipRequested(received);
-								break;
-							case "RFR":
-								friendRequestReplied(received);
-								break;
-							case "RF":
-								friendRemoved(received);
-								break;
-							case "CG":
-								groupCreated(received);
-								break;
-							case "GI":
-								groupInvite(received);
-								break;
-							case "PGL":
-								promoteGroupLeader(received);
-								break;
-							case "KGM":
-								kickGroupMember(received);
-								break;
-							case "LG":
-								leftGroup(received);
-								break;
-							case "MR":
-								requestMailbox(received);
-								break;
-							case "PONG":
-								break;
-							case "PING":
-								write("PONG", "", "");
-								break;
-							case "D":
+				synchronized (userLock) {
+					if (socket.dataAvailable() > 0) {
+						String received = read();
+						synchronized (userLock) {
+							switch (getHeader(received)) {
+								case "MSG":
+									messageReceived(received);
+									break;
+								case "DATA":
+									dataReceived(received);
+									break;
+								case "RFL":
+									friendListRequested(received);
+									break;
+								case "SFL":
+									friendListReceived(received);
+									break;
+								case "SU":
+									searchUser(received);
+									break;
+								case "SFR":
+									friendshipRequested(received);
+									break;
+								case "RFR":
+									friendRequestReplied(received);
+									break;
+								case "RF":
+									friendRemoved(received);
+									break;
+								case "CG":
+									groupCreated(received);
+									break;
+								case "GI":
+									groupInvite(received);
+									break;
+								case "PGL":
+									promoteGroupLeader(received);
+									break;
+								case "KGM":
+									kickGroupMember(received);
+									break;
+								case "LG":
+									leftGroup(received);
+									break;
+								case "MR":
+									requestMailbox(received);
+									break;
+								case "PONG":
+									break;
+								case "PING":
+									write("PONG", "", "");
+									break;
+								case "D":
 
-							default:
-								break;
+								default:
+									break;
+							}
 						}
 					}
-                }
+				}
 			} catch (IOException e) {
-				e.printStackTrace();
 				//TODO: connection lost
-				connected = false;
+				disconnected(true);
 			}
 			try {
 				Thread.sleep(50);
@@ -295,13 +296,14 @@ public class Client implements Runnable {
 		}
 	}
 
-	private void disconnected() {
+	private void disconnected(boolean timeout) {
+		connected = false;
 		try {
 			socket.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		account.disconnect(this,this.deviceNr);
+		account.disconnect(this, this.deviceNr, timeout);
 	}
 
 	private void messageReceived(String received) {
@@ -331,11 +333,12 @@ public class Client implements Runnable {
 			} while (checkSumme != 0);
 			info = read();
 		} while (!getHeader(info).equals("EOT"));
-		account.dataReceived(Integer.parseInt(getInfo(received)), getMessage(received), bytes,this);
+		account.dataReceived(Integer.parseInt(getInfo(received)), getMessage(received), bytes, this);
 	}
 
 	private void requestMailbox(String received) {
 		String date = getInfo(received);
+		account.requestMessage(this,date);
 	}
 
 	private void searchUser(String received) {
@@ -355,7 +358,7 @@ public class Client implements Runnable {
 	}
 
 	private void friendListRequested(String received) {
-		//Todo: request friendList
+		sendFriendlist(account.getFriendList());
 	}
 
 	private void friendListReceived(String received) {
@@ -368,6 +371,7 @@ public class Client implements Runnable {
 
 	private void friendshipRequested(String received) {
 		int tag = Integer.parseInt(getInfo(received));
+		account.addToFriendlist(tag);
 	}
 
 	private void friendRequestReplied(String received) {
@@ -377,6 +381,7 @@ public class Client implements Runnable {
 
 	private void friendRemoved(String received) {
 		int tag = Integer.parseInt(getInfo(received));
+
 	}
 
 	private void groupCreated(String received) {
@@ -386,7 +391,7 @@ public class Client implements Runnable {
 			tags[i] = Integer.parseInt(members[i]);
 		}
 		String groupname = getInfo(received);
-		int groupTag = 0;
+		int groupTag = account.createGroup(groupname, tags);
 		write("GT", groupTag + "", "");
 	}
 
@@ -407,12 +412,13 @@ public class Client implements Runnable {
 
 	private void leftGroup(String received) {
 		int groupTag = Integer.parseInt(getInfo(received));
+		account.leaveGroup(groupTag);
 	}
 
 	public static void main(String[] args) throws IOException {
 		ServerSocket serverSocket = new ServerSocket(1234);
 		Socket socket = serverSocket.accept();
 		char[] password = {'a', 'A'};
-		Client client = new Client(socket, new Server(password));
+
 	}
 }

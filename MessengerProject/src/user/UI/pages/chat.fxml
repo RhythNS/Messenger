@@ -1,29 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.chart.*?>
-<?import javafx.scene.shape.*?>
-<?import javafx.scene.control.*?>
-<?import java.lang.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.MenuButton?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="user.UI.controller.Chat">
-   <children>
-      <ScrollPane prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
-         <content>
-            <AnchorPane prefHeight="200.0" prefWidth="405.0" />
-         </content>
-      </ScrollPane>
-      <HBox spacing="10.0">
-         <children>
-            <MenuButton mnemonicParsing="false" popupSide="TOP" text="☰">
-              <items>
-                <MenuItem mnemonicParsing="false" text="Action 1" />
-                <MenuItem mnemonicParsing="false" text="Action 2" />
-              </items>
-            </MenuButton>
-            <TextArea fx:id="writingArea" prefHeight="0.0" HBox.hgrow="ALWAYS" />
-            <Button mnemonicParsing="false" text="send" />
-         </children>
-      </HBox>
-   </children>
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1" fx:controller="user.UI.controller.Chat">
+    <children>
+        <ScrollPane fx:id="root" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+            <content>
+                <AnchorPane prefHeight="200.0" prefWidth="405.0" />
+            </content>
+        </ScrollPane>
+        <HBox spacing="10.0">
+            <children>
+                <MenuButton mnemonicParsing="false" popupSide="TOP" text="☰">
+                    <items>
+                        <MenuItem mnemonicParsing="false" text="Action 1" />
+                        <MenuItem mnemonicParsing="false" text="Action 2" />
+                    </items>
+                </MenuButton>
+                <TextArea fx:id="writingArea" prefHeight="0.0" HBox.hgrow="ALWAYS" />
+                <Button mnemonicParsing="false" text="send" />
+            </children>
+        </HBox>
+    </children>
 </VBox>

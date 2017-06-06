@@ -7,6 +7,7 @@ import javafx.scene.control.ColorPicker;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import user.UI.Main;
+import user.UI.UiHandler;
 
 import java.io.IOException;
 
@@ -16,9 +17,10 @@ public class Register {
     public PasswordField password, confirmPassword;
     public CheckBox remindMe;
     public ColorPicker colorPicker;
+    private UiHandler uiHandler;
 
     public Register() {
-
+        uiHandler = UiHandler.getInstance();
     }
 
     public void switchToLogin() throws IOException {
@@ -28,9 +30,16 @@ public class Register {
     }
 
     public void confirm() throws IOException {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("../pages/mainPage.fxml"));
-        Parent root = loader.load();
-        Main.switchScene(root);
+        boolean login = uiHandler.logIn(username.getText(), password.getText());
+        if (login) {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("../pages/mainPage.fxml"));
+            Parent root = loader.load();
+            Main.switchScene(root);
+        } else {
+            username.getStyleClass().add("wrong");
+            password.getStyleClass().add("wrong");
+            confirmPassword.getStyleClass().add("wrong");
+        }
     }
 
 }
