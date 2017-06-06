@@ -12,9 +12,9 @@ public class Message implements Comparable<Message>{
 	Message previous;
 	
 	
-	public Message(int receiver, int sender,String messageContent,Date date,Message previous){
+	public Message(int transmitter,int receiver,String messageContent,Date date,Message previous){
 		this.receiver=receiver;
-		this.transmitter=sender;
+		this.transmitter=transmitter;
 		this.messageContent=messageContent;
 		this.date=date;
 		this.previous=previous;

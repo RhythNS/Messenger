@@ -14,6 +14,9 @@ public class DateCalc {
 		return forYear.format(new Date());
 	}
 
+	public static String getTime(){
+		return null;
+	}
 	public synchronized static String getNextDay(String currentDay) {
 		Calendar cal = Calendar.getInstance();
 		try {

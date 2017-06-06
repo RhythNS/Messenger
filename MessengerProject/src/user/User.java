@@ -8,6 +8,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import userDataManagement.DataManagement;
+
 public class User {
 
 	private String username;
@@ -20,7 +22,7 @@ public class User {
 	private int tag;
 	private ArrayList<Contact> pendingFriendrequest=new ArrayList<Contact>();
 	private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-
+	private DataManagement dataManagement;
 	public ArrayList<Contact> getFriendlist() {
 		return friendlist;
 	}
@@ -31,6 +33,7 @@ public class User {
 	
 	public User(String name) {
 		this.username = name;
+		this.dataManagement=new DataManagement(null);
 	}
 
 	public void setDeviceNumber(int nr) {
@@ -106,7 +109,7 @@ public class User {
 
 	// Kommunikation
 	public void sendMessage(String message, int tag) {
-		searchUserInFriendlist(tag).getChat().addMessage(tag, this.tag, message, new Date());
+		searchUserInFriendlist(tag).getChat().addMessage(tag, this.tag, message, new Date(),true);
 		client.writeMessage(tag, message);
 	}
 
@@ -121,23 +124,23 @@ public class User {
 		if (sender == tag && empf > 0) {
 			// Nachricht an Kontakt
 			Contact c = searchUserInFriendlist(empf);
-			c.getChat().addMessage(empf, sender, message, date);
+			c.getChat().addMessage(empf, sender, message, date,true);
 			// eigene Nachrichten vor dem Abschicken anzeigen?
 		} else {
 			if (sender == tag && empf < 0) {
 				// Nachricht an Gruppe
 				Group g = searchGroupInGrouplist(empf);
-				g.getChat().addMessage(empf, sender, message, date);
+				g.getChat().addMessage(empf, sender, message, date,true);
 			} else {
 				if (sender > 0 && empf == tag) {
 					// Nachricht von Kontakt
 					Contact c = searchUserInFriendlist(sender);
-					c.getChat().addMessage(empf, sender, message, date);
+					c.getChat().addMessage(empf, sender, message, date,true);
 				} else {
 					if (sender != tag && empf < 0) {
 						// Nachricht von Gruppe
 						Group g = searchGroupInGrouplist(empf);
-						g.getChat().addMessage(empf, sender, message, date);
+						g.getChat().addMessage(empf, sender, message, date,true);
 						// Welchen Tag hat Empf wenn an Gruppe?
 					} else {
 						System.err.println("Fatal Error #BlameBenós");
