@@ -169,6 +169,77 @@ public class DataManagement {
 	}
 
 	/**
+	 * Gets the name of a tag. Can return null if the tag has not been found!
+	 *
+	 * @param tag
+	 *            The tag you want to know the name of
+	 */
+	public String getUserName(int tag) {
+		synchronized (usersLock) {
+			if (tag > 0)
+				return usersArgument.getArgument(tag, 0);
+		}
+		return null;
+	}
+
+	/**
+	 * Gets the name of a tag. Returns -1 if something went wrong-
+	 *
+	 * @param name
+	 *            The name of the user
+	 * @return
+	 */
+	public int getUserTag(String name) {
+		synchronized (usersLock) {
+			if (name != null && name.length() != 0)
+				return usersTree.getTag(name);
+		}
+		return -1;
+	}
+
+	/**
+	 * Gets the Users info from a specified name. Can return null
+	 *
+	 * @param name
+	 *            The username of the person you want to have all the info of.
+	 *            #Stalking
+	 * @return
+	 */
+	public UserInfo getUserInfo(String name) {
+		if (name != null) {
+			int tag = getUserTag(name);
+			if (tag != -1) {
+				String color = getColor(tag);
+				if (color != null)
+					return new UserInfo(tag, name, color);
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Gets the Users info from a specified name. Can return null
+	 *
+	 * @param name
+	 *            The username of the person you want to have all the info of. I
+	 *            could rewrite the stalking joke but I have not another clue
+	 *            what is funny and I am kind of running out of time so um
+	 *            sorry!
+	 * @return
+	 */
+	public UserInfo getUserInfo(int tag) {
+		if (tag > 0) {
+			String name = getUserName(tag);
+			if (name != null) {
+				String color = getColor(tag);
+				if (color != null)
+					return new UserInfo(tag, name, color);
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Gets a color of a user. Can be null if an error occurred or tag was not
 	 * found!
 	 *
