@@ -174,40 +174,6 @@ public class Client implements Runnable{
 	}
 
 	/**
-	 * requests message from server from a specific date until now
-	 * @param date
-	 */
-	public void mailboxRequest(String date) {
-		synchronized (userLock) {
-			write("MR", date, "");
-		}
-	}
-
-	/**
-	 * request an up to date version of the friends list
-	 */
-	public void requestFriendslist() {
-		synchronized (userLock) {
-			write("RFL","","");
-		}
-	}
-
-	/**
-	 * sends the local friends lis to the server
-	 * @param friendList
-	 */
-	public void sendFriendlist(int[] friendList) {
-		synchronized (userLock) {
-			StringBuilder stringBuilder = new StringBuilder();
-			for (int i = 0; i < friendList.length-1; i++) {
-				stringBuilder.append(friendList[i]).append(",");
-			}
-			stringBuilder.append(friendList[friendList.length-1]);
-			write("SFL", friendList.length + "", stringBuilder.toString());
-		}
-	}
-
-	/**
 	 * search for an other User
 	 * @param username
 	 * @return returns a contact if user is found else returns null
@@ -229,7 +195,7 @@ public class Client implements Runnable{
 	 * @param tag
 	 * @return returns a contact if user is found else returns null
 	 */
-	public Contact searchFriend(int tag) {
+	public Contact searchUser(int tag) {
 		synchronized (userLock) {
 			write("SF",tag+"","");
 			String response = read();

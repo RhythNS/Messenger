@@ -230,12 +230,6 @@ public class Client implements Runnable {
 								case "DATA":
 									dataReceived(received);
 									break;
-								case "RFL":
-									friendListRequested(received);
-									break;
-								case "SFL":
-									friendListReceived(received);
-									break;
 								case "SU":
 									searchUser(received);
 									break;
@@ -262,9 +256,6 @@ public class Client implements Runnable {
 									break;
 								case "LG":
 									leftGroup(received);
-									break;
-								case "MR":
-									requestMailbox(received);
 									break;
 								case "PONG":
 									break;
@@ -336,11 +327,6 @@ public class Client implements Runnable {
 		account.dataReceived(Integer.parseInt(getInfo(received)), getMessage(received), bytes, this);
 	}
 
-	private void requestMailbox(String received) {
-		String date = getInfo(received);
-		account.requestMessage(this,date);
-	}
-
 	private void searchUser(String received) {
 		String response = "";
 		String color = "";
@@ -355,18 +341,6 @@ public class Client implements Runnable {
 			write("OK",color,response);
 		}
 
-	}
-
-	private void friendListRequested(String received) {
-		sendFriendlist(account.getFriendList());
-	}
-
-	private void friendListReceived(String received) {
-		String[] friends = getMessage(received).split(",");
-		int[] tags = new int[friends.length];
-		for (int i = 0; i < friends.length; i++) {
-			tags[i] = Integer.parseInt(friends[i]);
-		}
 	}
 
 	private void friendshipRequested(String received) {
