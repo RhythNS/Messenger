@@ -6,9 +6,11 @@ public class Mailbox {
 
 	ArrayList<Message> messages;
 	ArrayList<Message> files;
-	ArrayList<Integer> friends, requests, pending;
+	public ArrayList<Integer> friends;
+	public ArrayList<Integer> requests;
+	public ArrayList<Integer> pending;
 	ArrayList<ColorTransfer> colors;
-	ArrayList<GroupTransfer> groupTransfers;
+	public ArrayList<GroupTransfer> groupTransfers;
 
 	Mailbox() {
 		messages = new ArrayList<>();

@@ -1,9 +1,6 @@
 package server;
 
-import dataManagement.DateCalc;
-import dataManagement.Logger;
-import dataManagement.Mailbox;
-import dataManagement.Message;
+import dataManagement.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,7 +13,7 @@ public class Account {
 	private final Server server;
 	private boolean isLoggedIn = false;
 
-	public Account(int tag, Server server) {
+	Account(int tag, Server server) {
 		isLoggedIn = true;
 		this.tag = tag;
 		clients = new ArrayList<>();
@@ -25,7 +22,7 @@ public class Account {
 	}
 
 
-	public void receiveMessage(int from, String message, Client whoGotIt){
+	void receiveMessage(int from, String message, Client whoGotIt){
 		String date = DateCalc.getMessageDate();
 
 		for (Client c : clients) {
@@ -68,6 +65,36 @@ public class Account {
 			Message tm = mb.getMessage(i);
 			sender.writeMessage(tm.getTo(),tm.getFrom(),tm.getDate(),tm.getContent());
 		}
+
+		int[] pending = new int[mb.pendingSize()];
+		for (int i = 0; i < mb.pendingSize(); i++) {
+			pending[i] = mb.pending.get(i);
+		}
+		sender.sendPendinglist(pending);
+
+		int[] friends = new int[mb.friendSize()];
+		for (int i = 0; i < mb.friendSize(); i++) {
+			friends[i] = mb.friends.get(i);
+		}
+		sender.sendFriendlist(friends);
+
+		int[] groups = new int[mb.groupSize()];
+		for (int i = 0; i < mb.groupSize(); i++) {
+			groups[i] = mb.groupTransfers.get(i).getGroupTag();
+		}
+		sender.sendGrouplist(groups);
+
+		for (int i = 0; i < groups.length; i++) {
+			sender.updateGroupMembers(groups[i],mb.groupTransfers.get(i).getTags());
+		}
+
+
+		int[] requests = new int[mb.requestSize()];
+		for (int i = 0; i < mb.requestSize(); i++) {
+			requests[i] = mb.requests.get(i);
+		}
+		sender.sendRequestlist(requests);
+
 		for (int i = 0; i < mb.fileSize(); i++) {
 			Message fm = mb.getFile(i);
 			String[] split = fm.getContent().split("\n");
@@ -89,7 +116,7 @@ public class Account {
 		}
 	}
 
-	public boolean addClient(Client toAdd){
+	boolean addClient(Client toAdd){
 		if(clients.size() >= Constants.MAX_DEVICES){
 			Logger.getInstance().log("Acc002: Too many devices are logged in!");
 			return false;
@@ -105,6 +132,14 @@ public class Account {
 		return false;
 	}
 
+	UserInfo searchUser(int tag){
+		return searchUser(tag);
+	}
+
+	UserInfo searchUser(String username){
+		return server.searchUser(username);
+	}
+
 	public void acceptFriend(int tag){
 		server.addFriendTo(this,tag);
 	}
@@ -113,20 +148,52 @@ public class Account {
 	public void declineFriendShip(int tagtoAdd){
 		server.declineFriendShip(this,tagtoAdd);
 	}
-	public void addToFriendlist(int tagToAdd){
+	void addToFriendlist(int tagToAdd){
 		server.addFriendTo(this, tagToAdd );
 	}
+
+	public boolean removeFriend(int tagToRemove, Client sender){
+		boolean res = server.removeFriend(tagToRemove,tag);
+		if(res){
+			for (Client c: clients) {
+				if(!c.equals(sender))
+					c.removeFriend(tagToRemove);
+			}
+		}
+		return res;
+	}
+
+	void gotInvitedToGroup(int groupTag, String groupname, int[] member){
+		for (Client c :clients) {
+			c.groupInvite(groupTag,"",member);
+		}
+	}
+	boolean addToGroup(int groupTag, int toAddTag){
+		return server.sendGroupInvite(groupTag, toAddTag);
+	}
+
+	void updateGroupMemberForAllClients(int grouptag, int[] memberTags){
+		for (Client c: clients) {
+			c.updateGroupMembers(grouptag,memberTags);
+		}
+	}
+
 
 	public String getPassword() {
 		return password;
 	}
 
-	public int createGroup(String nameOfGroup, int[] accounts) {
+	int createGroup(String nameOfGroup, int[] accounts) {
 		if (nameOfGroup == null || accounts == null) {
 			dataManagement.Logger.getInstance().log("Acc001: ToCreate Group there is something null in createGroup()");
 			return 0;
 		}
 		return server.createGroup(nameOfGroup, accounts);
+	}
+
+
+	boolean removeFromGroup(int groupTag, int whoGetsRemoved){
+		return server.removeFromGroup(groupTag, whoGetsRemoved, tag);
 	}
 
 	public int getTag() {
@@ -147,7 +214,7 @@ public class Account {
 		}
 	}
 
-	public void sendData(int from, byte[] message,String filename, String date) {
+	void sendData(int from, byte[] message, String filename, String date) {
 		for (Client c :clients) {
 			try {
 				c.sendData(from, tag,date,filename,message);
@@ -156,4 +223,12 @@ public class Account {
 			}
 		}
 	}
+
+	void sendBlocked(Account accountWhoDeclines, boolean acceptOrDecline) {
+		for (Client c : clients) {
+			c.replyFriendRequest(accountWhoDeclines.getTag(),acceptOrDecline);
+		}
+	}
+
+
 }

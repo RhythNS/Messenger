@@ -3,6 +3,7 @@ package server;
 import dataManagement.*;
 import secruity.Decrypter;
 import secruity.Encrypter;
+import secruity.KeyConverter;
 import secruity.KeyStoreSynchron;
 import socketio.ServerSocket;
 import socketio.Socket;
@@ -28,7 +29,13 @@ public class Server {
 		this.passwordForData = password;
 		if(KeyStoreSynchron.getInstance().loadKeyStore(password, firsttime)){
 
-			this.secretKey = KeyStoreSynchron.getInstance().getKey(password);
+			if(firsttime){
+				secretKey = KeyConverter.generateSynchronKey();
+				KeyStoreSynchron.getInstance().saveKey(password,secretKey);
+			}
+			else {
+				this.secretKey = KeyStoreSynchron.getInstance().getKey(password);
+			}
 			startServer();
 		}
 		else{
@@ -51,6 +58,7 @@ public class Server {
 			Socket socket;
 			try {
 				socket = server.accept();
+				System.out.println("A new Client is now accepted");
 				new Client(socket, this);
 			} catch (IOException e) {
 				System.err.println("Something went wrong with accepting the socket! #BlameBene");
@@ -69,7 +77,7 @@ public class Server {
 	 * 			returns null, if something went wrong
 	 */
 
-	Account registerUser(String user, String pass,String color) {
+	Account registerUser(String user, String pass, String color) {
 		if (user == null|| pass == null) {
 			Logger.getInstance().log("Ser001: User cannot register because UserPass is null!");
 			return null;
@@ -127,14 +135,45 @@ public class Server {
 	}
 
 	int createGroup(String name, int[] accounts) {
+
 		return dataMangement.createGroup(name,accounts);
 	}
 
+	boolean removeFromGroup(int grouptag, int toRemove, int whoWantsToRemoveTag){
+		if(dataMangement.getGroupAdmin(grouptag) == whoWantsToRemoveTag){
+			boolean res = dataMangement.removeFromGroup(toRemove,grouptag);
+			if(res){
+				int[] member = dataMangement.getGroupMembers(grouptag);
+				for (Account a :accounts) {
+					if(dataMangement.isInGroup(a.getTag(),grouptag)){
+						a.updateGroupMemberForAllClients(grouptag,member);
+					}
+				}
 
+			}
+			return res;
 
-	boolean addFriendTo(Account account, int tagOfAccountToAdd) {
-		return dataMangement.addFriend(account.getTag(),tagOfAccountToAdd);
+		}
+		return false;
 	}
+
+	boolean sendGroupInvite(int groups, int usertag){
+		boolean res = dataMangement.addToGroup(usertag,groups);
+		if(res){
+			int[] member = dataMangement.getGroupMembers(groups);
+			for(Account a: accounts){
+				if(dataMangement.isInGroup(a.getTag(),groups)){
+					if( a.getTag() != usertag)
+						a.updateGroupMemberForAllClients(groups,member);
+					else{
+						a.gotInvitedToGroup(groups,dataMangement.getGroupName(groups),member);
+					}
+				}
+			}
+		}
+		return false;
+	}
+
 
 	void receiveMessage(int from, Account to, String message, String date) {
 		String encrypted = Encrypter.encryptSynchron(message,secretKey);
@@ -189,7 +228,7 @@ public class Server {
 		return dataMangement.removeFromGroup(accTag, grpTag);
 	}
 
-	DeviceLogin diviceLogin(int tag,int deviceNr) {
+	DeviceLogin diviceLogin(int tag, int deviceNr) {
 		return dataMangement.loginDevice(tag,deviceNr);
 	}
 
@@ -205,6 +244,13 @@ public class Server {
 		dataMangement.logout(account.getTag(),deviceNumber,timeout);
 	}
 
+	// Gruppen Kicken
+	// Freund entfernen (Account)
+	//TODO Gruppen einladungen versenden
+
+
+	//TODO Search User
+
 	void dataReceived(int from, int toAcc, byte[] message, String filename, String date) {
 		String encrypted = Encrypter.encryptSynchron(message,secretKey);
 		dataMangement.saveFile(from,toAcc,date,encrypted);
@@ -215,8 +261,47 @@ public class Server {
 		}
 	}
 
+	/**
+	 * searches for a User
+	 * @param username the User who is searched
+	 * @return UserInfo where all Infos like Color Name and Tag are saved
+	 */
+
+	UserInfo searchUser(String username){
+		return dataMangement.getUserInfo(username);
+	}
+
+	/**
+	 * searches for a User
+	 * @param tag the User who is searched
+	 * @return UserInfo where all Infos like Color Name and Tag are saved
+	 */
+	UserInfo searchUser(int tag){
+		return dataMangement.getUserInfo(tag);
+	}
+
+	boolean addFriendTo(Account account, int tagOfAccountToAdd) {
+
+		boolean res = dataMangement.addFriend(account.getTag(),tagOfAccountToAdd);
+		if(res){
+			for(Account a: accounts){
+				if(a.getTag() == tagOfAccountToAdd){
+					a.sendBlocked(account,true);
+					return res;
+				}
+			}
+		}
+		return res;
+	}
 
 	void declineFriendShip(Account accountWhoDeclines, int tagWhoGetsBlocked) {
 		dataMangement.removeFriend(accountWhoDeclines.getTag(),tagWhoGetsBlocked);
+
+		for (Account a: accounts){
+			if(a.getTag() == tagWhoGetsBlocked){
+				a.sendBlocked(accountWhoDeclines, false);
+				return;
+			}
+		}
 	}
 }
