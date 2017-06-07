@@ -1,5 +1,6 @@
 package server;
 
+import dataManagement.DateCalc;
 import dataManagement.DeviceLogin;
 import socketio.ServerSocket;
 import socketio.Socket;
@@ -54,7 +55,8 @@ public class Client implements Runnable {
 			connected = true;
 			Thread t = new Thread(this);
 			t.start();
-			account.requestMessage(this,deviceLogin.DATE);							//
+			account.requestMessage(this,deviceLogin.DATE);
+			sendTime(DateCalc.getDeviceDate());
 
 		} else {
 			write("NO", "", "");
@@ -352,12 +354,16 @@ public class Client implements Runnable {
 	private void friendRequestReplied(String received) {
 		int tag = Integer.parseInt(getInfo(received));
 		boolean accept = Boolean.parseBoolean(getMessage(received));
+		if (accept)
+			account.acceptFriend(tag);
+		else
+			account.declineFriendShip(tag);
 		//TODO benni
 	}
 
 	private void friendRemoved(String received) {
 		int tag = Integer.parseInt(getInfo(received));
-
+		account.removeFriend(tag, this);
 	}
 
 	private void groupCreated(String received) {
@@ -374,6 +380,7 @@ public class Client implements Runnable {
 	private void groupInvite(String received) {
 		int groupTag = Integer.parseInt(getInfo(received));
 		int userTag = Integer.parseInt(getMessage(received));
+		account.addToGroup(groupTag, userTag);
 	}
 
 	private void promoteGroupLeader(String received) {
@@ -385,6 +392,7 @@ public class Client implements Runnable {
 	private void kickGroupMember(String received) {
 		int groupTag = Integer.parseInt(getInfo(received));
 		int userTag = Integer.parseInt(getMessage(received));
+
 	}
 
 	private void leftGroup(String received) {

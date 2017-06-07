@@ -105,10 +105,11 @@ public class Client implements Runnable {
 	private boolean send(byte[] bytes) throws IOException {
 		//todo: Encryption
 		byte checksum = 0;
-		for (byte b : bytes) {
+		for (byte b:bytes
+				) {
 			checksum ^= b;
 		}
-		write("DATA", "", checksum + "");
+		write("DATA", bytes.length+"", checksum+"");
 		socket.getOutputStream().write(bytes);
 		if (getHeader(read()).equals("OK"))
 			return true;
@@ -156,18 +157,15 @@ public class Client implements Runnable {
 	 *
 	 * @param tag
 	 * @param filename
-	 * @param stream
+	 * @param bytes
 	 * @return returns false if file size is to big
 	 * @throws IOException
 	 */
-	public boolean sendData(int tag, String filename, FileInputStream stream) throws IOException {
+	public boolean sendData(int tag, String filename, byte[] bytes) throws IOException {
 		synchronized (userLock) {
-			if (stream.available() <= 1048576) {
+			if (bytes.length <= 1048576) {
 				write("DATA", tag + "", filename);
-				byte[] bytes = new byte[stream.available()];
-				stream.read(bytes);
-				while (!send(bytes))
-					;
+				while (!send(bytes)) ;
 				write("EOT", "", "");
 				return true;
 			}
