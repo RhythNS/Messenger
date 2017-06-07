@@ -2,15 +2,14 @@ package user;
 
 public class Contact {
 
-	
-	private String username;
+	private String username, color;
 	private int tag;
 	private Chat chat;
-	
-	public Contact(String username,int tag){
-		this.username=username;
-		this.tag=tag;
-		this.chat=new Chat(this);
+
+	public Contact(String username, String color, int tag) {
+		this.username = username;
+		this.tag = tag;
+		this.color = color;
 	}
 
 	public String getUsername() {
@@ -24,7 +23,8 @@ public class Contact {
 	public Chat getChat() {
 		return chat;
 	}
-	public void setChat(Chat chat) {
-		this.chat = chat;
+
+	public String getColor() {
+		return color;
 	}
 }
