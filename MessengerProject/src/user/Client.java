@@ -530,7 +530,6 @@ public class Client implements Runnable {
 
 	private void friendRequestReceived(String received) {
 		int tag = Integer.parseInt(getInfo(received));
-		String username = getMessage(received);
 		Contact contact = user.getContact(tag);
 		user.deleteContact(tag);
 		if (contact == null) {

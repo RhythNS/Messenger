@@ -34,7 +34,7 @@ public class Message implements Comparable<Message> {
 
 	@Override
 	public int compareTo(Message m) {
-		return this.date.compareTo(m.date);
+		return -this.date.compareTo(m.date);
 	}
 
 	public Long getPointerFrom() {

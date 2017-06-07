@@ -2,9 +2,11 @@ package user;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalTime;
 import java.util.ArrayList;
 
 import secruity.MD5Hash;
+import user.UI.UiHandler;
 import userDataManagement.DataManagement;
 
 public class User {
@@ -16,6 +18,8 @@ public class User {
 	private int port = 25565;
 	private Contact self;
 	private DataManagement dataManagement;
+	private UiHandler uiComm = UiHandler.getInstance();
+	private Thread nextDay;
 
 	public User() {
 		dataManagement = new DataManagement(null);
@@ -25,6 +29,28 @@ public class User {
 		unsortedGroupMembers = new ArrayList<>();
 		groups = new ArrayList<>();
 		client = new Client(host, port, this);
+		nextDay = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				LocalTime lt = LocalTime.now();
+				int time = lt.toSecondOfDay(), time2 = time;
+				while (true) {
+					time = lt.toSecondOfDay();
+					if (time < time2) {
+						dataManagement.addDay();
+					}
+					time2 = time;
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						System.err.println("Error TCFD0: InterrupptedException! #BlameBene");
+						e.printStackTrace();
+					}
+					lt = LocalTime.now();
+				}
+			}
+		});
+		nextDay.start();
 	}
 
 	public Contact getSelf() {
@@ -103,17 +129,29 @@ public class User {
 		client.disconnect();
 	}
 
+
 	public void dataReceived(int from, int to, String info, byte[] bytes) {
 		dataManagement.saveFile(from, to, info, bytes);
-		// TODO UPDATE IN UI
+		uiComm.messageReceived(from);
+		Contact c = getContact(to);
+		if (c == null) {
+			System.err.println("You got a file from someone who is not in RAM! #BlameBene");
+			return;
+		}
 	}
 
 	public void messageReceived(int sender, int empf, String message, String givenDate) {
 
 	}
 
-	public void addMessageToChat() {
-
+	private void addMessage(int otherGuy, Message message) {
+		if (message != null) {
+			Contact contact = getContact(otherGuy);
+			if (contact == null) {
+				System.err.println("Somehow sent a message to someone who is not here! #BlameBene");
+				return;
+			}
+		}
 	}
 
 	public Contact getContact(int tag) {
@@ -165,7 +203,7 @@ public class User {
 
 	public void deleteGroup(int tag) {
 		for (int i = 0; i < groups.size(); i++) {
-			if(groups.get(i).getTag() == tag) {
+			if (groups.get(i).getTag() == tag) {
 				groups.remove(i);
 				return;
 			}
