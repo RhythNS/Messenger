@@ -1,18 +1,18 @@
 package user;
 
 import socketio.Socket;
+import userDataManagement.DateCalc;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.PublicKey;
 
-public class Client implements Runnable{
+public class Client implements Runnable {
 
 	private Socket socket;
 	private final Object userLock = new Object();
 	private User user;
 	private boolean connected;
-
 
 	public Client(String host, int port, User user) {
 		socket = new Socket(host, port);
@@ -24,22 +24,23 @@ public class Client implements Runnable{
 	}
 
 	/**
-	 * Returns 0 if the registration process failed. Otherwise the tag is returned
+	 * Returns 0 if the registration process failed. Otherwise the tag is
+	 * returned
 	 */
 	public int register(String username, String password, String color) throws IOException {
-		if(!connect()) {
+		if (!connect()) {
 			System.err.println("Could not connect!");
 			return 0;
 		}
 		// TODO Generate public and private Key
 
 		PublicKey userPublicKey = null;
-		write("KEY","", userPublicKey.toString());
+		write("KEY", "", userPublicKey.toString());
 		String synchronisedKey = getMessage(socket.readLine());
 		// TODO: decode Key
 		// TODO: generate synchronised Key
 
-		write("REG", color,username + "," + password);
+		write("REG", color, username + "," + password);
 
 		String response = read();
 
@@ -53,23 +54,22 @@ public class Client implements Runnable{
 		return 0;
 	}
 
-	public boolean login(String username, String password,int deviceNr) throws IOException {
-		if(!connect()) {
+	public boolean login(String username, String password, int deviceNr) throws IOException {
+		if (!connect()) {
 			System.err.println("Could not connect!");
 			return false;
 		}
 		/*
-		// TODO Generate public and private Key
-
-		PublicKey userPublicKey = null;
-		write("KEY","", userPublicKey.toString());
-		String synchronisedKey = getMessage(socket.readLine());
-		// TODO: decode Key
-		// TODO: generate synchronised Key
-
-		// TODO HASH PASSWORD
-		*/
-		write("LOG", deviceNr+"", username+","+password);
+		 * // TODO Generate public and private Key
+		 *
+		 * PublicKey userPublicKey = null; write("KEY","",
+		 * userPublicKey.toString()); String synchronisedKey =
+		 * getMessage(socket.readLine()); // TODO: decode Key // TODO: generate
+		 * synchronised Key
+		 *
+		 * // TODO HASH PASSWORD
+		 */
+		write("LOG", deviceNr + "", username + "," + password);
 		String response = read();
 
 		if (getHeader(response).equals("OK")) {
@@ -78,14 +78,14 @@ public class Client implements Runnable{
 			Thread t = new Thread(this);
 			t.start();
 			return true;
-		}else {
+		} else {
 			socket.close();
 		}
 		return false;
 	}
 
 	public void disconnect() {
-		write("D","","");
+		write("D", "", "");
 		try {
 			socket.close();
 		} catch (IOException e) {
@@ -96,20 +96,19 @@ public class Client implements Runnable{
 	private void write(String header, String info, String message) {
 		//todo: Encryption
 		try {
-			socket.write(header+"/"+info+"/"+message+"\n");
+			socket.write(header + "/" + info + "/" + message + "\n");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	private boolean send(byte[] bytes) throws IOException {
-        //todo: Encryption
+		//todo: Encryption
 		byte checksum = 0;
-		for (byte b:bytes
-				) {
+		for (byte b : bytes) {
 			checksum ^= b;
 		}
-		write("DATA", "", checksum+"");
+		write("DATA", "", checksum + "");
 		socket.getOutputStream().write(bytes);
 		if (getHeader(read()).equals("OK"))
 			return true;
@@ -141,12 +140,14 @@ public class Client implements Runnable{
 
 	/**
 	 * writes a message to an other User
-	 * @param tag tag of the User
+	 *
+	 * @param tag
+	 *            tag of the User
 	 * @param message
 	 */
 	public void writeMessage(int tag, String message) {
 		synchronized (userLock) {
-			write("MSG",tag+"",message);
+			write("MSG", tag + "", message);
 		}
 	}
 
@@ -165,7 +166,8 @@ public class Client implements Runnable{
 				write("DATA", tag + "", filename);
 				byte[] bytes = new byte[stream.available()];
 				stream.read(bytes);
-				while (!send(bytes)) ;
+				while (!send(bytes))
+					;
 				write("EOT", "", "");
 				return true;
 			}
@@ -175,41 +177,45 @@ public class Client implements Runnable{
 
 	/**
 	 * search for an other User
+	 *
 	 * @param username
 	 * @return returns a contact if user is found else returns null
 	 */
 	public Contact searchUser(String username) {
 		synchronized (userLock) {
-			write("SU","",username);
+			write("SU", "", username);
 			String response = read();
 			Contact contact = null;
 			String color = getInfo(response);
 			if (getHeader(response).equals("OK"))
-				contact = new Contact(username, Integer.parseInt(getMessage(response)));
+				contact = new Contact(username, color, Integer.parseInt(getMessage(response)));
 			return contact;
 		}
 	}
 
 	/**
 	 * search for an other User
+	 *
 	 * @param tag
 	 * @return returns a contact if user is found else returns null
 	 */
 	public Contact searchUser(int tag) {
 		synchronized (userLock) {
-			write("SF",tag+"","");
+			write("SF", tag + "", "");
 			String response = read();
 			Contact contact = null;
 			String color = getInfo(response);
 			if (getHeader(response).equals("OK"))
-				contact = new Contact(getMessage(response), tag);
+				contact = new Contact(getMessage(response), color, tag);
 			return contact;
 		}
 	}
 
 	/**
 	 * sends a friend request to an other user
-	 * @param tag tag of the User
+	 *
+	 * @param tag
+	 *            tag of the User
 	 */
 	public void sendFriendRequest(int tag) {
 		synchronized (userLock) {
@@ -219,6 +225,7 @@ public class Client implements Runnable{
 
 	/**
 	 * replies a friend request
+	 *
 	 * @param tag
 	 * @param accept
 	 */
@@ -229,7 +236,9 @@ public class Client implements Runnable{
 	}
 
 	/**
-	 * removes a friend from your friend list and remove you from his friend list
+	 * removes a friend from your friend list and remove you from his friend
+	 * list
+	 *
 	 * @param tag
 	 */
 	public void removeFriend(int tag) {
@@ -240,24 +249,27 @@ public class Client implements Runnable{
 
 	/**
 	 * creates a chat group with other Users
+	 *
 	 * @param groupName
-	 * @param tags list of other users
+	 * @param tags
+	 *            list of other users
 	 * @return
 	 */
 	public int createGroup(String groupName, int[] tags) {
 		synchronized (userLock) {
 			StringBuilder stringBuilder = new StringBuilder();
-			for (int i = 0; i < tags.length-1; i++) {
+			for (int i = 0; i < tags.length - 1; i++) {
 				stringBuilder.append(tags[i]).append(",");
 			}
-			stringBuilder.append(tags[tags.length-1]);
-			write("CG", groupName,stringBuilder.toString());
+			stringBuilder.append(tags[tags.length - 1]);
+			write("CG", groupName, stringBuilder.toString());
 			return Integer.parseInt(getInfo(read()));
 		}
 	}
 
 	/**
 	 * invites a user to your group
+	 *
 	 * @param groupTag
 	 * @param userTag
 	 */
@@ -268,8 +280,8 @@ public class Client implements Runnable{
 	}
 
 	/**
-	 * promotes user to group leader
-	 * works only if you are group leader
+	 * promotes user to group leader works only if you are group leader
+	 *
 	 * @param groupTag
 	 * @param userTag
 	 */
@@ -280,8 +292,8 @@ public class Client implements Runnable{
 	}
 
 	/**
-	 * kicks user from group
-	 * works only if you are group leader
+	 * kicks user from group works only if you are group leader
+	 *
 	 * @param groupTag
 	 * @param userTag
 	 */
@@ -293,6 +305,7 @@ public class Client implements Runnable{
 
 	/**
 	 * leave the group
+	 *
 	 * @param groupTag
 	 */
 	public void leaveGroup(int groupTag) {
@@ -311,56 +324,56 @@ public class Client implements Runnable{
 						String received = read();
 						synchronized (userLock) {
 							switch (getHeader(received)) {
-								case "MSG":
-									messageReceived(received);
-									break;
-								case "DATA":
-									dataReceived(received);
-									break;
-								case "FR":
-									friendRequestReceived(received);
-									break;
-								case "SFL":
-									friendListReceived(received);
-									break;
-								case "SPL":
-									pendingListReceived(received);
-									break;
-								case "SRL":
-									requestListReceived(received);
-									break;
-								case "SGL":
-									groupListReceived(received);
-									break;
-								case "GI":
-									invitedToGroup(received);
-									break;
-								case "PGL":
-									promotedToGroupLeader(received);
-									break;
-								case "RF":
-									friendRemoved(received);
-									break;
-								case "RFR":
-									friendRequestReplied(received);
-									break;
-								case "UGM":
-									updateGroupMembers(received);
-									break;
-								case "TIME":
-									timeReceived(received);
-									break;
-								case "PONG":
-									break;
-								case "PING":
-									write("PONG", "", "");
-									break;
-								case "D":
-									socket.close();
-									user.disconnect();
-									break;
-								default:
-									break;
+							case "MSG":
+								messageReceived(received);
+								break;
+							case "DATA":
+								dataReceived(received);
+								break;
+							case "FR":
+								friendRequestReceived(received);
+								break;
+							case "SFL":
+								friendListReceived(received);
+								break;
+							case "SPL":
+								pendingListReceived(received);
+								break;
+							case "SRL":
+								requestListReceived(received);
+								break;
+							case "SGL":
+								groupListReceived(received);
+								break;
+							case "GI":
+								invitedToGroup(received);
+								break;
+							case "PGL":
+								promotedToGroupLeader(received);
+								break;
+							case "RF":
+								friendRemoved(received);
+								break;
+							case "RFR":
+								friendRequestReplied(received);
+								break;
+							case "UGM":
+								updateGroupMembers(received);
+								break;
+							case "TIME":
+								timeReceived(received);
+								break;
+							case "PONG":
+								break;
+							case "PING":
+								write("PONG", "", "");
+								break;
+							case "D":
+								socket.close();
+								user.disconnect();
+								break;
+							default:
+								break;
 							}
 						}
 					}
@@ -378,7 +391,7 @@ public class Client implements Runnable{
 			counter++;
 			if (counter > 500) {
 				counter = 0;
-				write("PING","","");
+				write("PING", "", "");
 			}
 		}
 	}
@@ -444,14 +457,14 @@ public class Client implements Runnable{
 	}
 
 	private void friendRequestReceived(String received) {
-		int userName = Integer.parseInt(getInfo(received));
+		int tag = Integer.parseInt(getInfo(received));
 		String username = getMessage(received);
 	}
 
 	private void messageReceived(String received) {
 		String fromTo = getInfo(received);
 		String[] infos = fromTo.split(",");
-		user.messageReceived(Integer.parseInt(infos[0]), Integer.parseInt(infos[1]), getMessage(received),infos[2]);
+		user.messageReceived(Integer.parseInt(infos[0]), Integer.parseInt(infos[1]), getMessage(received), infos[2]);
 	}
 
 	private void dataReceived(String received) {
@@ -466,29 +479,29 @@ public class Client implements Runnable{
 					e.printStackTrace();
 				}
 				//Todo: decryption
-				for (byte b : bytes
-						) {
+				for (byte b : bytes) {
 					checkSumme ^= b;
 				}
 				if (checkSumme == 0) {
-					write("OK","","");
-				}else
-					write("NOK","","");
+					write("OK", "", "");
+				} else
+					write("NOK", "", "");
 			} while (checkSumme != 0);
 			info = read();
 		} while (!getHeader(info).equals("EOT"));
 		String[] fromTo = getInfo(received).split(",");
-		user.dataReceived(Integer.parseInt(fromTo[0]),Integer.parseInt(fromTo[1]), getMessage(received), bytes, fromTo[2]);
+		// 0 from 1 to 2 wann
+		user.dataReceived(Integer.parseInt(fromTo[0]), Integer.parseInt(fromTo[1]), info, bytes);
 	}
 
 	private void timeReceived(String received) {
-		String time = getMessage(received);
+		DateCalc.setOfSet(getMessage(received));
 	}
 
 	public static void main(String[] args) throws IOException {
 		User user = new User("Horst");
 		Client client = new Client("localhost", 1234, user);
 		client.login("Horst", "password", 5);
-		client.writeMessage(1234,"lol");
+		client.writeMessage(1234, "lol");
 	}
 }
