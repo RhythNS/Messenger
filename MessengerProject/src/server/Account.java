@@ -37,25 +37,25 @@ public class Account {
 	}
 
 	/**
-	 * This Message sends the
+	 * This Message sends the data first to all of your devices, then to the server
 	 * @param from
 	 * @param message
-	 * @param date
+	 * @param filename
 	 * @param whoGotIt
 	 */
-	void dataReceived(int from, byte[] message,String date, Client whoGotIt) {
+	void dataReceived(int from,String filename, byte[] message, Client whoGotIt) {
 
+		String date = DateCalc.getMessageDate();
 		for(Client c: clients){
 			if(!whoGotIt.equals(c)){
 				try {
-					//TODO FILENAME NEEDS TO BE ADDED
-					c.sendData(from, tag,date,"filename",message);
+					c.sendData(from, tag,date,filename,message);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
 		}
-		server.dataReceived(from,tag,message,date);
+		server.dataReceived(from,tag,message,filename,date);
 	}
 
 
@@ -79,9 +79,9 @@ public class Account {
 		}
 	}
 
-	void disconnect(Client client, int deviceNumber){
+	void disconnect(Client client, int deviceNumber, boolean timeout){
 		if(clients.remove(client)) {
-			server.disconnectDevice(deviceNumber,this);
+			server.disconnectDevice(deviceNumber,this, timeout);
 			if(clients.size()== 0){
 				isLoggedIn = false;
 				server.disconnctAccount(this);
@@ -110,6 +110,9 @@ public class Account {
 	}
 
 
+	public void declineFriendShip(int tagtoAdd){
+		server.declineFriendShip(this,tagtoAdd);
+	}
 	public void addToFriendlist(int tagToAdd){
 		server.addFriendTo(this, tagToAdd );
 	}
@@ -118,7 +121,7 @@ public class Account {
 		return password;
 	}
 
-	public int createGroup(String nameOfGroup, Account[] accounts) {
+	public int createGroup(String nameOfGroup, int[] accounts) {
 		if (nameOfGroup == null || accounts == null) {
 			dataManagement.Logger.getInstance().log("Acc001: ToCreate Group there is something null in createGroup()");
 			return 0;
@@ -130,12 +133,27 @@ public class Account {
 		return tag;
 	}
 
-	public int[] getFriendList(){
+	int[] getFriendList(){
 		return server.getFriendList(tag);
 	}
 
-	public boolean leaveGroup(int grpTag){
+	boolean leaveGroup(int grpTag){
 		return server.leaveGroup(tag ,grpTag);
 	}
 
+	void sendMessage(int from, String message, String date) {
+		for (Client c :clients) {
+			c.writeMessage(from,tag,date,message);
+		}
+	}
+
+	public void sendData(int from, byte[] message,String filename, String date) {
+		for (Client c :clients) {
+			try {
+				c.sendData(from, tag,date,filename,message);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 }

@@ -15,19 +15,18 @@ public class Server {
 
 	private final char[] passwordForData;
 	private ArrayList<Account> accounts;
-	private Thread acceptingThread;
 	private ServerSocket server;
 	private DataManagement dataMangement;
 	private boolean isRunning = false;
 	private final SecretKey secretKey;
 	private final int port;
 
-	public Server(char[] password, int port) {
+	public Server(char[] password, int port,boolean firsttime) {
 
 		this.port = port;
 		dataMangement = new DataManagement(null);
 		this.passwordForData = password;
-		if(KeyStoreSynchron.getInstance().loadKeyStore(password)){
+		if(KeyStoreSynchron.getInstance().loadKeyStore(password, firsttime)){
 
 			this.secretKey = KeyStoreSynchron.getInstance().getKey(password);
 			startServer();
@@ -48,27 +47,18 @@ public class Server {
 			e.printStackTrace();
 			return;
 		}
-		startAcceptingThread();
-	}
-
-	private void startAcceptingThread() {
-		if (!isRunning) {
-			isRunning = true;
-			Server serverInstance = this;
-			acceptingThread = new Thread(() -> {
-				while (isRunning) {
-					Socket socket;
-					try {
-						socket = server.accept();
-						new Client(socket, serverInstance);
-					} catch (IOException e) {
-						System.err.println("Something went wrong with accepting the socket! #BlameBene");
-						e.printStackTrace();
-					}
-				}
-			});
+		while (isRunning) {
+			Socket socket;
+			try {
+				socket = server.accept();
+				new Client(socket, this);
+			} catch (IOException e) {
+				System.err.println("Something went wrong with accepting the socket! #BlameBene");
+				e.printStackTrace();
+			}
 		}
 	}
+
 
 	/**
 	 * Tries to register a new User. This needs to be called
@@ -136,13 +126,8 @@ public class Server {
 		return a;
 	}
 
-	int createGroup(String name, Account[] accounts) {
-
-		int[] tags = new int[accounts.length];
-		for (int i = 0; i < tags.length; i++) {
-			tags[i] = accounts[i].getTag();
-		}
-		return dataMangement.createGroup(name,tags);
+	int createGroup(String name, int[] accounts) {
+		return dataMangement.createGroup(name,accounts);
 	}
 
 
@@ -154,7 +139,14 @@ public class Server {
 	void receiveMessage(int from, Account to, String message, String date) {
 		String encrypted = Encrypter.encryptSynchron(message,secretKey);
 		dataMangement.saveMessage(from, to.getTag(), date, encrypted);
+		for (Account a: accounts){
+			if(a.equals(to)){
+				a.sendMessage(from,message,date);
+			}
+		}
 	}
+
+
 
 	void receiveFile(int from, Account to, byte[] file, String date){
 		String encodedFile = Encrypter.encryptSynchron(file,secretKey);
@@ -213,10 +205,18 @@ public class Server {
 		dataMangement.logout(account.getTag(),deviceNumber,timeout);
 	}
 
-	void dataReceived(int from, int toAcc, byte[] message, String date) {
+	void dataReceived(int from, int toAcc, byte[] message, String filename, String date) {
 		String encrypted = Encrypter.encryptSynchron(message,secretKey);
 		dataMangement.saveFile(from,toAcc,date,encrypted);
+		for (Account a:accounts) {
+			if(a.getTag() == toAcc){
+				a.sendData(from,message,filename,date);
+			}
+		}
 	}
 
 
+	void declineFriendShip(Account accountWhoDeclines, int tagWhoGetsBlocked) {
+		dataMangement.removeFriend(accountWhoDeclines.getTag(),tagWhoGetsBlocked);
+	}
 }
