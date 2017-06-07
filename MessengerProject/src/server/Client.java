@@ -3,6 +3,7 @@ package server;
 import dataManagement.ColorTransfer;
 import dataManagement.DateCalc;
 import dataManagement.DeviceLogin;
+import dataManagement.GroupTransfer;
 import socketio.ServerSocket;
 import socketio.Socket;
 
@@ -59,11 +60,10 @@ public class Client implements Runnable {
 			t.start();
 			account.requestMessage(this,deviceLogin.DATE);
 			sendTime(DateCalc.getDeviceDate());
-
 		} else {
 			write("NO", "", "");
 		}
-
+		write("LOG","","");
 
 	}
 
@@ -158,13 +158,19 @@ public class Client implements Runnable {
 		write("SFL", requests.length + "", stringBuilder.toString());
 	}
 
-	public void sendGrouplist(int[] groups) {
+	public void sendGrouplist(ArrayList<GroupTransfer> groupTransfers) {
 		StringBuilder stringBuilder = new StringBuilder();
-		for (int i = 0; i < groups.length-1; i++) {
-			stringBuilder.append(groups[i]).append(",");
+		for (int i = 0; i < groupTransfers.size()-1; i++) {
+			stringBuilder.append(groupTransfers.get(i).getGroupTag()).append(",");
 		}
-		stringBuilder.append(groups[groups.length-1]);
-		write("SGL", groups.length + "", stringBuilder.toString());
+		stringBuilder.append(groupTransfers.get(groupTransfers.size()-1).getGroupTag());
+		write("SGL", groupTransfers.size() + "", stringBuilder.toString());
+		stringBuilder = new StringBuilder();
+		for (int i = 0; i < groupTransfers.size()-1; i++) {
+			stringBuilder.append(groupTransfers.get(i).getName()).append(",");
+		}
+		stringBuilder.append(groupTransfers.get(groupTransfers.size()-1).getName());
+		write("SGL",groupTransfers.size()+"",stringBuilder.toString());
 	}
 
 	public void updateColors(ArrayList<ColorTransfer> colorTransfers) {
@@ -355,7 +361,7 @@ public class Client implements Runnable {
 		} else {
 			int tag = Integer.parseInt(getInfo(received));
 		}
-		//TODO find friends
+
 		if (response.equals("")) {
 			write("NO", "", "");
 		} else {
