@@ -1,5 +1,6 @@
 package server;
 
+import dataManagement.ColorTransfer;
 import dataManagement.DateCalc;
 import dataManagement.DeviceLogin;
 import socketio.ServerSocket;
@@ -7,6 +8,7 @@ import socketio.Socket;
 
 import java.io.IOException;
 import java.security.Key;
+import java.util.ArrayList;
 
 public class Client implements Runnable {
 
@@ -163,6 +165,22 @@ public class Client implements Runnable {
 		}
 		stringBuilder.append(groups[groups.length-1]);
 		write("SGL", groups.length + "", stringBuilder.toString());
+	}
+
+	public void updateColors(ArrayList<ColorTransfer> colorTransfers) {
+		StringBuilder stringBuilder = new StringBuilder();
+		for (int i = 0; i < colorTransfers.size()-1; i++) {
+			stringBuilder.append(colorTransfers.get(i).getTag()).append(",");
+		}
+		stringBuilder.append(colorTransfers.get(colorTransfers.size() - 1).getTag());
+		write("UC","",stringBuilder.toString());
+		String tags = stringBuilder.toString();
+		stringBuilder = new StringBuilder();
+		for (int i = 0; i < colorTransfers.size()-1; i++) {
+			stringBuilder.append(colorTransfers.get(i).getColor()).append(",");
+		}
+		stringBuilder.append(colorTransfers.get(colorTransfers.size() - 1).getColor());
+		write("UC","",stringBuilder.toString());
 	}
 
 	public void sendFriendRequest(int tag, String username) {
@@ -358,7 +376,6 @@ public class Client implements Runnable {
 			account.acceptFriend(tag);
 		else
 			account.declineFriendShip(tag);
-		//TODO benni
 	}
 
 	private void friendRemoved(String received) {
@@ -392,7 +409,7 @@ public class Client implements Runnable {
 	private void kickGroupMember(String received) {
 		int groupTag = Integer.parseInt(getInfo(received));
 		int userTag = Integer.parseInt(getMessage(received));
-
+		account.removeFromGroup(groupTag, userTag);
 	}
 
 	private void leftGroup(String received) {
