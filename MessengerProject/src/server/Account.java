@@ -61,32 +61,12 @@ public class Account {
 
 		if(mb == null)return;
 
-		for (int i = 0; i < mb.messageSize(); i++) {
-			Message tm = mb.getMessage(i);
-			sender.writeMessage(tm.getTo(),tm.getFrom(),tm.getDate(),tm.getContent());
-		}
-
-		int[] pending = new int[mb.pendingSize()];
-		for (int i = 0; i < mb.pendingSize(); i++) {
-			pending[i] = mb.pending.get(i);
-		}
-		sender.sendPendinglist(pending);
-
 		int[] friends = new int[mb.friendSize()];
 		for (int i = 0; i < mb.friendSize(); i++) {
 			friends[i] = mb.friends.get(i);
 		}
 		sender.sendFriendlist(friends);
 
-		int[] groups = new int[mb.groupSize()];
-		for (int i = 0; i < mb.groupSize(); i++) {
-			groups[i] = mb.groupTransfers.get(i).getGroupTag();
-		}
-		sender.sendGrouplist(groups);
-
-		for (int i = 0; i < groups.length; i++) {
-			sender.updateGroupMembers(groups[i],mb.groupTransfers.get(i).getTags());
-		}
 
 
 		int[] requests = new int[mb.requestSize()];
@@ -94,6 +74,23 @@ public class Account {
 			requests[i] = mb.requests.get(i);
 		}
 		sender.sendRequestlist(requests);
+
+
+		int[] pending = new int[mb.pendingSize()];
+		for (int i = 0; i < mb.pendingSize(); i++) {
+			pending[i] = mb.pending.get(i);
+		}
+		sender.sendPendinglist(pending);
+
+		sender.sendGrouplist(mb.groupTransfers);
+
+		sender.updateColors(mb.colors);
+
+
+		for (int i = 0; i < mb.messageSize(); i++) {
+			Message tm = mb.getMessage(i);
+			sender.writeMessage(tm.getTo(),tm.getFrom(),tm.getDate(),tm.getContent());
+		}
 
 		for (int i = 0; i < mb.fileSize(); i++) {
 			Message fm = mb.getFile(i);
@@ -104,6 +101,8 @@ public class Account {
 				e.printStackTrace();
 			}
 		}
+
+
 	}
 
 	void disconnect(Client client, int deviceNumber, boolean timeout){
@@ -145,9 +144,15 @@ public class Account {
 	}
 
 
+	void sendFriendRequest(int toWhomTag){
+		server.sendFriendRequest(toWhomTag, tag);
+	}
+
 	public void declineFriendShip(int tagtoAdd){
 		server.declineFriendShip(this,tagtoAdd);
 	}
+
+
 	void addToFriendlist(int tagToAdd){
 		server.addFriendTo(this, tagToAdd );
 	}
@@ -191,6 +196,17 @@ public class Account {
 		return server.createGroup(nameOfGroup, accounts);
 	}
 
+	boolean promoteGroupMember(int grpTag, int userWhoWantsToGetAdminTag){
+
+		boolean res = server.promoteGroupMember(grpTag,userWhoWantsToGetAdminTag, tag);
+
+		if(!res) return false;
+		for (Client c :
+				clients) {
+			c.promoteGroupLeader(grpTag);
+		}
+		return true;
+	}
 
 	boolean removeFromGroup(int groupTag, int whoGetsRemoved){
 		return server.removeFromGroup(groupTag, whoGetsRemoved, tag);
@@ -231,4 +247,23 @@ public class Account {
 	}
 
 
+	void gotRemovedFromGroup(int grpTag) {
+		for (Client c: clients) {
+			c.kickGroupMember(grpTag);
+		}
+	}
+
+	public void receiveFriendRequest(int fromWhomTag,String username) {
+		for (Client c :
+				clients) {
+			c.sendFriendRequest(fromWhomTag, username);
+		}
+	}
+
+	public void updateFriends(int tagFromWhichAcc) {
+		for (Client c :
+				clients) {
+			c.removeFriend(tagFromWhichAcc);
+		}
+	}
 }

@@ -145,8 +145,13 @@ public class Server {
 			if(res){
 				int[] member = dataMangement.getGroupMembers(grouptag);
 				for (Account a :accounts) {
-					if(dataMangement.isInGroup(a.getTag(),grouptag)){
-						a.updateGroupMemberForAllClients(grouptag,member);
+					if(a.getTag() != toRemove) {
+						if (dataMangement.isInGroup(a.getTag(), grouptag)) {
+							a.updateGroupMemberForAllClients(grouptag, member);
+						}
+					}
+					else{
+						a.gotRemovedFromGroup(grouptag);
 					}
 				}
 
@@ -185,15 +190,17 @@ public class Server {
 		}
 	}
 
-
-
-	void receiveFile(int from, Account to, byte[] file, String date){
-		String encodedFile = Encrypter.encryptSynchron(file,secretKey);
-		dataMangement.saveFile(from,to.getTag(),date,encodedFile);
-	}
-
 	boolean removeFriend(int tagToRemove, int tagFromWhichAcc) {
-		return dataMangement.removeFriend(tagFromWhichAcc, tagToRemove);
+		boolean res = dataMangement.removeFriend(tagFromWhichAcc, tagToRemove);
+		if(res){
+			for (Account a :
+					accounts) {
+				if (a.getTag() == tagToRemove){
+					a.updateFriends(tagFromWhichAcc);
+				}
+			}
+		}
+		return res;
 	}
 
 	/**
@@ -225,7 +232,20 @@ public class Server {
 	}
 
 	boolean leaveGroup(int accTag, int grpTag) {
-		return dataMangement.removeFromGroup(accTag, grpTag);
+		boolean res = dataMangement.removeFromGroup(accTag, grpTag);
+		if(res){
+			int[] member = dataMangement.getGroupMembers(grpTag);
+			for (Account a :
+					accounts) {
+				if (dataMangement.isInGroup(a.getTag(), grpTag)){
+					a.updateGroupMemberForAllClients(grpTag,member);
+				}
+				if(a.getTag() == accTag){
+					a.gotRemovedFromGroup(grpTag);
+				}
+			}
+		}
+		return res;
 	}
 
 	DeviceLogin diviceLogin(int tag, int deviceNr) {
@@ -246,10 +266,10 @@ public class Server {
 
 	// Gruppen Kicken
 	// Freund entfernen (Account)
-	//TODO Gruppen einladungen versenden
+	// Gruppen einladungen versenden
 
 
-	//TODO Search User
+	// Search User
 
 	void dataReceived(int from, int toAcc, byte[] message, String filename, String date) {
 		String encrypted = Encrypter.encryptSynchron(message,secretKey);
@@ -281,7 +301,6 @@ public class Server {
 	}
 
 	boolean addFriendTo(Account account, int tagOfAccountToAdd) {
-
 		boolean res = dataMangement.addFriend(account.getTag(),tagOfAccountToAdd);
 		if(res){
 			for(Account a: accounts){
@@ -291,16 +310,44 @@ public class Server {
 				}
 			}
 		}
-		return res;
+		return false;
 	}
+
+	//TODO Kein FriendRequest an USer der Erhalten ist
 
 	void declineFriendShip(Account accountWhoDeclines, int tagWhoGetsBlocked) {
 		dataMangement.removeFriend(accountWhoDeclines.getTag(),tagWhoGetsBlocked);
-
 		for (Account a: accounts){
 			if(a.getTag() == tagWhoGetsBlocked){
 				a.sendBlocked(accountWhoDeclines, false);
 				return;
+			}
+		}
+	}
+
+	public boolean promoteGroupMember(int grpTag, int userWhoWantsToGetAdminTag, int userWhoIsAdminTag) {
+		if(dataMangement.getGroupAdmin(grpTag) == userWhoIsAdminTag){
+			boolean res = dataMangement.promoteToAdmin(grpTag,userWhoWantsToGetAdminTag);
+			if(!res) return false;
+
+			int member[] = dataMangement.getGroupMembers(grpTag);
+			for (Account a :
+					accounts) {
+				if(dataMangement.isInGroup(a.getTag(),grpTag)) {
+					a.updateGroupMemberForAllClients(grpTag, member);
+				}
+			}
+
+		}
+		return false;
+	}
+
+	public void sendFriendRequest(int toWhomTag, int fromWhomTag) {
+		//TODO speichern in DataManagement?
+
+		for (Account a : accounts) {
+			if(a.getTag() == toWhomTag){
+				a.receiveFriendRequest(fromWhomTag,dataMangement.getUserName(toWhomTag));
 			}
 		}
 	}

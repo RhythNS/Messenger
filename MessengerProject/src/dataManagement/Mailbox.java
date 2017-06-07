@@ -9,7 +9,7 @@ public class Mailbox {
 	public ArrayList<Integer> friends;
 	public ArrayList<Integer> requests;
 	public ArrayList<Integer> pending;
-	ArrayList<ColorTransfer> colors;
+	public ArrayList<ColorTransfer> colors;
 	public ArrayList<GroupTransfer> groupTransfers;
 
 	Mailbox() {
