@@ -403,6 +403,45 @@ public class DataManagement {
 	}
 
 	/**
+	 * Promotes someone to the group. The tag should be must be in the group!
+	 * Returns wheter it successeded or not!
+	 *
+	 * @param tag
+	 *            The Tag of the guy who is supposed to be promoted. Its always
+	 *            the guy you hate and not you. Looking at you Benni. I don't
+	 *            know why. I might be going crazy in a minute.
+	 * @param groupTag
+	 *            The Tag of the Group
+	 */
+	public boolean promoteToAdmin(int tag, int groupTag) {
+		synchronized (groupLock) {
+			groupTag = -groupTag;
+			if (tag > 0 && groupTag > 0) {
+				return groupList.setAdmin(groupTag, tag);
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Adds a tag to a group. Returns wheter it successeded or not
+	 *
+	 * @param tag
+	 *            The Tag of the person who should be added
+	 * @param groupTag
+	 *            The Tag of the Group
+	 */
+	public boolean addToGroup(int tag, int groupTag) {
+		synchronized (groupLock) {
+			groupTag = -groupTag;
+			if (groupTag > 0 && tag > 0) {
+				return groupList.inGroup(groupTag, tag) ? true : groupList.addMember(groupTag, tag);
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Deletes a group with the given Tag. Returns if the deletions successeded.
 	 *
 	 * @param userTag
