@@ -202,6 +202,7 @@ public class TestingTesting123 {
 		System.out.println(Long.parseLong(l + "", Character.MAX_RADIX));
 		System.out.println(Long.toString(l, Character.MAX_RADIX));
 
+
 		while (correct) {
 			for (int i = 0; i < wtd.values().length; i++) {
 				System.out.println(i + ": " + wtd.values()[i]);

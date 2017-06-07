@@ -536,7 +536,9 @@ public class DataManagement {
 			Mailbox mb = messageDirector.getMessages(tag, date, groupTags);
 			for (int i = 0; i < groupTags.length; i++) {
 				int[] tags = getGroupMembers(groupTags[i]);
-				mb.groupTransfers.add(new GroupTransfer(groupTags[i], tags));
+				if (tags == null)
+					continue;
+				mb.groupTransfers.add(new GroupTransfer(groupTags[i], tags, getGroupName(groupTags[i])));
 			}
 			synchronized (usersLock) {
 				int[] tags = pendingList.getFriends(tag);

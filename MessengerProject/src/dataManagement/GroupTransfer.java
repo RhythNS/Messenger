@@ -4,8 +4,9 @@ public class GroupTransfer {
 
 	private int groupTag;
 	private int[] tags;
+	private String name;
 
-	public GroupTransfer(int groupTag, int[] tags) {
+	public GroupTransfer(int groupTag, int[] tags, String name) {
 		this.groupTag = groupTag;
 		this.tags = tags;
 	}
@@ -16,6 +17,10 @@ public class GroupTransfer {
 
 	public int[] getTags() {
 		return tags;
+	}
+
+	public String getName() {
+		return name;
 	}
 
 }
