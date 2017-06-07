@@ -1,30 +1,53 @@
 package user;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Date;
 
+import secruity.MD5Hash;
 import userDataManagement.DataManagement;
 
 public class User {
 
-	private String username;
-	private ArrayList<Contact> friendlist, pendingFriends, requestedFriends;
+	private String host = "localhost";
+	private ArrayList<Contact> friendList, pendingFriends, requestedFriends, unsortedGroupMembers;
 	private ArrayList<Group> groups;
 	private Client client;
-	private int tag;
-	private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+	private int port = 25565;
+	private Contact self;
 	private DataManagement dataManagement;
 
-	public ArrayList<Contact> getFriendlist() {
-		return friendlist;
+	public User() {
+		dataManagement = new DataManagement(null);
+		friendList = new ArrayList<>();
+		pendingFriends = new ArrayList<>();
+		requestedFriends = new ArrayList<>();
+		unsortedGroupMembers = new ArrayList<>();
+		groups = new ArrayList<>();
+		client = new Client(host, port, this);
 	}
 
-	public ArrayList<Contact> getPendingFriendrequest() {
+	public Contact getSelf() {
+		return self;
+	}
+
+	public String getUsername() {
+		return self.getUsername();
+	}
+
+	public String getColor() {
+		return self.getColor();
+	}
+
+	public int getTag() {
+		return self.getTag();
+	}
+
+	public ArrayList<Contact> getFriendlist() {
+		return friendList;
+	}
+
+	public ArrayList<Contact> getPendingFriends() {
 		return pendingFriends;
 	}
 
@@ -32,214 +55,182 @@ public class User {
 		return requestedFriends;
 	}
 
-	public User(String name) {
-		this.username = name;
-		dataManagement = new DataManagement(null);
-		friendlist = new ArrayList<>();
-		pendingFriends = new ArrayList<>();
-		requestedFriends = new ArrayList<>();
+	public ArrayList<Group> getGroups() {
+		return groups;
 	}
 
-	public void connect(String host, int port) {
-		client = new Client(host, port, this);
-	}
-
-	public void setDeviceNumber(int nr) {
-		dataManagement.saveDeviceNr(nr);
-	}
-
-	public boolean replyFriendRequest(int tag, boolean reply) {
-
-	}
-
-	public boolean getFriendreply(int tag, boolean reply) {
-		for (Contact c : getPendingFriendrequest()) {
-			if (tag == c.getTag()) {
-				getPendingFriendrequest().remove(c);
-				return friendlist.add(c);
-			}
-		}
-		return reply;
-	}
-
-	public void requestFriendship(int tag, String username) {
-		if (tag != 0 && username != null) {
-			Contact friend = new Contact(username, tag);
-			getPendingFriendrequest().add(friend);
-		}
-	}
-
-	public void receiveFriendlist(ArrayList<Contact> friendlist) {
-		this.friendlist = friendlist;
-	}
-
-	public boolean removeFriend(int tag) {
-		Contact result = searchUserInFriendlist(tag);
-		if (result != null) {
-			return friendlist.remove(result);
-		}
-		return false;
-	}
-
-	public Contact searchUserInFriendlist(int tag) {
-		for (Contact c : friendlist) {
-			if (c.getTag() == tag) {
-				return c;
-			}
-		}
-		System.err.println("User not found in Friendlist #BlameBenós");
-		return null;
-	}
-
-	// Anmeldung&Registrierung
-	public boolean register(String username, String password, String color) throws IOException {
-		int result = client.register(username, password, color);
-		if (result == -1) {
-			System.err.println("Registration failed #BlameBenós");
+	public boolean register(String username, String password, String color) {
+		if (username == null || username.length() == 0 || password == null || password.length() == 0 || color == null
+				|| color.length() == 0) {
+			System.err.println("Something is null or has a length of 0. I refuse to do anything with it! #BlameBene");
 			return false;
-		} else
-			this.tag = result;
-		System.out.println("Registration succeded");
+		}
+		int tag = 0;
+		try {
+			tag = client.register(username, MD5Hash.getMD5(password), color);
+		} catch (IOException | NoSuchAlgorithmException e) {
+			System.err.println("IOException or NosuchAlgorithmException \\(>.<)/ #BlameBene");
+			e.printStackTrace();
+			return false;
+		}
+		if (tag == 0) {
+			System.err.println("Tag was 0 meaing something went wrong! #BlameBene");
+			return false;
+		}
+		self = new Contact(tag);
+		self.setColor(color);
+		self.setUsername(username);
 		return true;
 	}
 
-	public boolean login(String username, String password) throws IOException {
-		//Nachrichten ins Ram laden
-		return client.login(username, password, dataManagement.getDeviceNr());
+	public boolean login(String username, String password) {
+		try {
+			client.login(username, MD5Hash.getMD5(password), dataManagement.getDeviceNr());
+		} catch (IOException | NoSuchAlgorithmException e) {
+			System.err.println("IOException or NosuchAlgorithmException \\(>.<)/ #BlameBene");
+			e.printStackTrace();
+			return false;
+		}
+		self = client.searchUser(username);
+		return true;
 	}
 
-	// Kommunikation
-	public void sendMessage(String message, int tag) {
-		searchUserInFriendlist(tag).getChat().addMessage(tag, this.tag, message, new Date(), true);
-		client.writeMessage(tag, message);
+	public void setDeviceNumber(int number) {
+		dataManagement.saveDeviceNr(number);
+	}
+
+	public void disconnect() {
+		client.disconnect();
+	}
+
+	public void dataReceived(int from, int to, String info, byte[] bytes) {
+		dataManagement.saveFile(from, to, info, bytes);
+		// TODO UPDATE IN UI
 	}
 
 	public void messageReceived(int sender, int empf, String message, String givenDate) {
-		Date date = null;
-		try {
-			date = dateFormat.parse(givenDate);
-		} catch (ParseException e) {
-			System.err.println("Could not parse the date!");
-			e.printStackTrace();
-		}
-		if (sender == tag && empf > 0) {
-			// Nachricht an Kontakt
-			Contact c = searchUserInFriendlist(empf);
-			c.getChat().addMessage(empf, sender, message, date, true);
-			// eigene Nachrichten vor dem Abschicken anzeigen?
-		} else {
-			if (sender == tag && empf < 0) {
-				// Nachricht an Gruppe
-				Group g = searchGroupInGrouplist(empf);
-				g.getChat().addMessage(empf, sender, message, date, true);
-			} else {
-				if (sender > 0 && empf == tag) {
-					// Nachricht von Kontakt
-					Contact c = searchUserInFriendlist(sender);
-					c.getChat().addMessage(empf, sender, message, date, true);
-				} else {
-					if (sender != tag && empf < 0) {
-						// Nachricht von Gruppe
-						Group g = searchGroupInGrouplist(empf);
-						g.getChat().addMessage(empf, sender, message, date, true);
-						// Welchen Tag hat Empf wenn an Gruppe?
-					} else {
-						System.err.println("Fatal Error #BlameBenós");
-					}
-				}
-			}
-		}
 
 	}
 
-	public void dataReceived(int send, int empf, String filename, byte[] data) {
-		dataManagement.saveFile(send, empf, filename, data);
+	public void addMessageToChat() {
+
 	}
 
-	public void sendData(int tag, String filename, FileInputStream stream) {
-		try {
-			client.sendData(tag, filename, stream);
-		} catch (IOException e) {
-			System.err.println("Sending data failed #BlameBenós");
-			e.printStackTrace();
+	public Contact getContact(int tag) {
+		for (int i = 0; i < friendList.size(); i++) {
+			if (friendList.get(i).getTag() == tag)
+				return friendList.get(i);
 		}
-	}
-
-	public ArrayList<Message> getOwnMessages(Contact c, int messageCount) {
-		ArrayList<Message> ownMessages = new ArrayList<Message>();
-		for (Message m : c.getChat().getMessages(messageCount)) {
-			if (m.transmitter == tag) {
-				ownMessages.add(m);
-			}
+		for (int i = 0; i < pendingFriends.size(); i++) {
+			if (pendingFriends.get(i).getTag() == tag)
+				return pendingFriends.get(i);
 		}
-		return ownMessages;
-	}
-
-	public ArrayList<Message> getContactMessages(Contact c, int messageCount) {
-		ArrayList<Message> ownMessages = new ArrayList<Message>();
-		for (Message m : c.getChat().getMessages(messageCount)) {
-			if (m.transmitter == c.getTag()) {
-				ownMessages.add(m);
-			}
+		for (int i = 0; i < requestedFriends.size(); i++) {
+			if (requestedFriends.get(i).getTag() == tag)
+				return requestedFriends.get(i);
 		}
-		return ownMessages;
-	}
-	// Gruppen Zeug
-
-	public void groupInvite(int groupTag, String groupName, ArrayList<Contact> groupList) {
-		Group g = new Group(groupTag, groupName, groupList);
-		groups.add(g);
-	}
-
-	public boolean promoteGroupLeader(int groupTag, int tag) {
-		Group g = searchGroupInGrouplist(tag);
-		Contact a = searchUserInGroup(tag, g);
-		if (g != null && a != null) {
-			g.setAdmin(a);
-			return true;
+		for (int i = 0; i < unsortedGroupMembers.size(); i++) {
+			if (unsortedGroupMembers.get(i).getTag() == tag)
+				return unsortedGroupMembers.get(i);
 		}
-		System.err.println("User or group not found!");
-		return false;
-	}
-
-	public void kickGroupMember(int groupTag, int tag) {
-		// Permission check??
-		Group g = searchGroupInGrouplist(tag);
-		Contact a = searchUserInGroup(tag, g);
-		if (g != null && a != null) {
-			g.kickUser(tag);
-		}
-		System.err.println("User or group not found!");
-	}
-
-	public Group searchGroupInGrouplist(int tag) {
-		for (Group g : groups) {
-			if (g.getTag() == tag) {
-				return g;
-			}
-		}
-		System.err.println("Group not found in your Grouplist #BlameBenós");
 		return null;
 	}
 
-	public Contact searchUserInGroup(int tag, Group g) {
-		for (Contact c : g.getGroupList()) {
-			if (c.getTag() == tag) {
-				return c;
+	public void deleteContact(int tag) {
+		for (int i = 0; i < friendList.size(); i++) {
+			if (friendList.get(i).getTag() == tag) {
+				friendList.get(i);
+				return;
 			}
 		}
-		System.err.println("User not found in Group");
-		return null;
+		for (int i = 0; i < pendingFriends.size(); i++) {
+			if (pendingFriends.get(i).getTag() == tag) {
+				pendingFriends.get(i);
+				return;
+			}
+		}
+		for (int i = 0; i < requestedFriends.size(); i++) {
+			if (requestedFriends.get(i).getTag() == tag) {
+				requestedFriends.remove(i);
+				return;
+			}
+		}
+		for (int i = 0; i < unsortedGroupMembers.size(); i++) {
+			if (unsortedGroupMembers.get(i).getTag() == tag) {
+				unsortedGroupMembers.remove(i);
+				return;
+			}
+		}
 	}
 
-	public boolean deleteGroup(Group group) {
-		if (groups.contains(group)) {
-			groups.remove(group);
-			client.leaveGroup(group.getTag());
-			return true;
+	public void deleteGroup(int tag) {
+		for (int i = 0; i < groups.size(); i++) {
+			if(groups.get(i).getTag() == tag) {
+				groups.remove(i);
+				return;
+			}
 		}
-		System.out.println("Group doesn't exsist #BlameBenós");
-		return false;
+	}
+
+	public void addToFriends(Contact contact) {
+		if (contact != null)
+			if (!friendList.contains(contact))
+				friendList.add(contact);
+	}
+
+	public void addToPending(Contact contact) {
+		if (contact != null)
+			if (!pendingFriends.contains(contact))
+				pendingFriends.add(contact);
+	}
+
+	public void addToRequested(Contact contact) {
+		if (contact != null)
+			if (!requestedFriends.contains(contact))
+				requestedFriends.add(contact);
+	}
+
+	public void addToUnsortedGroupMembers(Contact contact) {
+		if (contact != null)
+			if (!unsortedGroupMembers.contains(contact))
+				unsortedGroupMembers.add(contact);
+	}
+
+	public boolean removeFriends(Contact contact) {
+		if (contact != null)
+			return friendList.remove(contact);
+		return true;
+	}
+
+	public boolean removeRequsted(Contact contact) {
+		if (contact != null)
+			return requestedFriends.remove(contact);
+		return true;
+	}
+
+	public boolean removePending(Contact contact) {
+		if (contact != null)
+			return pendingFriends.remove(contact);
+		return true;
+	}
+
+	public boolean removeUnsortedGroupMembers(Contact contact) {
+		if (contact != null)
+			return unsortedGroupMembers.remove(contact);
+		return true;
+	}
+
+	public Group getGroup(int tag) {
+		return groups.get(tag);
+	}
+
+	public void addGroup(Group group) {
+		if (group != null)
+			groups.add(group);
+	}
+
+	public boolean amIAdmin(Group group) {
+		return group.getAdmin() == self;
 	}
 
 }
