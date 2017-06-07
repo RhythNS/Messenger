@@ -26,5 +26,6 @@ public class Contact {
 
     public void setContact(user.Contact contact) {
         this.contact = contact;
+        name.setText(contact.getUsername());
     }
 }

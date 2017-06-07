@@ -1,9 +1,11 @@
 package user.UI.controller;
 
 import javafx.scene.Parent;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
+import user.UI.UiHandler;
 
 public class MainPage {
 
@@ -13,7 +15,7 @@ public class MainPage {
     private Parent content;
 
     public MainPage() {
-
+        UiHandler.getInstance().setMainPage(this);
     }
 
     public void setChat(Chat chat) {
@@ -27,4 +29,23 @@ public class MainPage {
         root.getChildren().add(this.content);
     }
 
+    public Parent getChat() {
+        return content;
+    }
+
+    public void addFriend(Parent parent) {
+        friends.getChildren().add(parent);
+    }
+
+    public void addPending(Parent pending) {
+        this.pending.getChildren().add(pending);
+    }
+
+    public void addRequest(Parent request) {
+        this.request.getChildren().add(request);
+    }
+
+    public void addGroup(Label group) {
+        this.groups.getChildren().add(group);
+    }
 }

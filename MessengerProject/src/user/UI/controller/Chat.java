@@ -20,5 +20,6 @@ public class Chat {
 
     public void setChat(user.Chat chat) {
         this.chat = chat;
+
     }
 }

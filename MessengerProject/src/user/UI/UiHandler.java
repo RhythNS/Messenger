@@ -2,12 +2,16 @@ package user.UI;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
+import javafx.scene.control.Label;
 import user.Client;
+import user.Contact;
+import user.Group;
 import user.UI.controller.Chat;
 import user.UI.controller.MainPage;
 import user.User;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class UiHandler {
 
@@ -19,7 +23,7 @@ public class UiHandler {
     private boolean login;
 
     private UiHandler() {
-        login = false;
+        login = true;
     }
 
     public static UiHandler getInstance() {
@@ -37,7 +41,7 @@ public class UiHandler {
 
     public boolean logIn(String username,String password) throws IOException {
         user = new User(username);
-        //boolean login = user.login(username, password);
+        boolean login = user.login(username, password);
         if (!login)
             user = null;
         return login;
@@ -51,6 +55,46 @@ public class UiHandler {
         return register;
     }
 
+    public void messageReceived(int tag) {
+        Parent content = mainPage.getChat();
+    }
 
+    public void loadChatlist() throws IOException {
+        ArrayList<Contact> contacts = user.getFriendlist();
+        ArrayList<Contact> pendings = user.getPendingFriendrequest();
+        ArrayList<Contact> requests = user.getRequestedFriends();
+        ArrayList<Group> groups = user.getGroups();
+        for (Contact c : contacts) {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("../pages/contact.fxml"));
+            Parent friend = loader.load();
+            user.UI.controller.Contact contact = loader.getController();
+            contact.setContact(c);
+            mainPage.addFriend(friend);
+        }
+        for (Contact c: pendings) {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("../pages/contact.fxml"));
+            Parent pending = loader.load();
+            user.UI.controller.Contact contact = loader.getController();
+            contact.setContact(c);
+            mainPage.addPending(pending);
+        }
+        for (Contact c: requests) {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("../pages/contact.fxml"));
+            Parent request = loader.load();
+            user.UI.controller.Contact contact = loader.getController();
+            contact.setContact(c);
+            mainPage.addRequest(request);
+        }
+        for (Group g:groups) {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("../pages/Group.fxml"));
+            Label group = loader.load();
+            user.UI.controller.Group groupController = loader.getController();
+            groupController.setGroup(g);
+            mainPage.addGroup(group);
+        }
+    }
 
+    public void setMainPage(MainPage mainPage) {
+        this.mainPage = mainPage;
+    }
 }
