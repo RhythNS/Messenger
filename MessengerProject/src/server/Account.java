@@ -144,8 +144,8 @@ public class Account {
 	}
 
 
-	void sendFriendRequest(int toWhomTag){
-		server.sendFriendRequest(toWhomTag, tag);
+	boolean sendFriendRequest(int toWhomTag){
+		return server.sendFriendRequest(toWhomTag, tag);
 	}
 
 	public void declineFriendShip(int tagtoAdd){
@@ -253,14 +253,14 @@ public class Account {
 		}
 	}
 
-	public void receiveFriendRequest(int fromWhomTag,String username) {
+	void receiveFriendRequest(int fromWhomTag, String username) {
 		for (Client c :
 				clients) {
 			c.sendFriendRequest(fromWhomTag, username);
 		}
 	}
 
-	public void updateFriends(int tagFromWhichAcc) {
+	void updateFriends(int tagFromWhichAcc) {
 		for (Client c :
 				clients) {
 			c.removeFriend(tagFromWhichAcc);

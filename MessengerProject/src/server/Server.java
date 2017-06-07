@@ -342,13 +342,16 @@ public class Server {
 		return false;
 	}
 
-	public void sendFriendRequest(int toWhomTag, int fromWhomTag) {
+	public boolean sendFriendRequest(int toWhomTag, int fromWhomTag) {
 		//TODO speichern in DataManagement?
 
+		boolean res = dataMangement.addFriend(fromWhomTag,toWhomTag);
+		if(!res)return false;
 		for (Account a : accounts) {
 			if(a.getTag() == toWhomTag){
 				a.receiveFriendRequest(fromWhomTag,dataMangement.getUserName(toWhomTag));
 			}
 		}
+		return true;
 	}
 }
