@@ -12,7 +12,7 @@ public class Client implements Runnable {
 	private Socket socket;
 	private final Object userLock = new Object();
 	private User user;
-	private boolean connected;
+	private boolean connected, isLoggedIn;
 
 	public Client(String host, int port, User user) {
 		socket = new Socket(host, port);
@@ -105,11 +105,10 @@ public class Client implements Runnable {
 	private boolean send(byte[] bytes) throws IOException {
 		//todo: Encryption
 		byte checksum = 0;
-		for (byte b:bytes
-				) {
+		for (byte b : bytes) {
 			checksum ^= b;
 		}
-		write("DATA", bytes.length+"", checksum+"");
+		write("DATA", bytes.length + "", checksum + "");
 		socket.getOutputStream().write(bytes);
 		if (getHeader(read()).equals("OK"))
 			return true;
@@ -165,7 +164,8 @@ public class Client implements Runnable {
 		synchronized (userLock) {
 			if (bytes.length <= 1048576) {
 				write("DATA", tag + "", filename);
-				while (!send(bytes)) ;
+				while (!send(bytes))
+					;
 				write("EOT", "", "");
 				return true;
 			}
@@ -366,9 +366,15 @@ public class Client implements Runnable {
 							case "PING":
 								write("PONG", "", "");
 								break;
+							case "LOG":
+								isLoggedIn = false;
+								break;
 							case "D":
 								socket.close();
 								user.disconnect();
+								break;
+							case "UC":
+								updateColors(received);
 								break;
 							default:
 								break;
@@ -394,69 +400,143 @@ public class Client implements Runnable {
 		}
 	}
 
+	private void updateColors(String received) {
+		String[] users = getMessage(received).split(",");
+		int[] tags = new int[users.length];
+		for (int i = 0; i < users.length; i++) {
+			tags[i] = Integer.parseInt(users[i]);
+		}
+		String[] colors = getMessage(read()).split(",");
+		for (int i = 0; i < colors.length; i++) {
+			Contact contact = user.getContact(tags[i]);
+			if (contact == null) {
+				System.err.println(
+						"Fatal error! Contact not found! This means everything is not working in user! #BlameBene");
+				contact = new Contact(tags[i]);
+			}
+			contact.setColor(colors[i]);
+		}
+	}
+
 	private void updateGroupMembers(String received) {
 		int groupTag = Integer.parseInt(getInfo(received));
 		String[] members = getMessage(received).split(",");
-		int[] tags = new int[members.length];
+		Group group = user.getGroup(groupTag);
+		if (group == null) {
+			System.err.println("I told you so bene! Group has no name! #BlameBene");
+			return;
+		}
 		for (int i = 0; i < members.length; i++) {
-			tags[i] = Integer.parseInt(members[i]);
+			int tag = Integer.parseInt(members[i]);
+			Contact contact = user.getContact(tag);
+			user.deleteContact(tag);
+			if (contact == null) {
+				if (isLoggedIn)
+					contact = searchUser(tag);
+				else
+					contact = new Contact(tag);
+				user.addToUnsortedGroupMembers(contact);
+				group.addUser(contact);
+			}
 		}
 	}
 
 	private void friendRequestReplied(String received) {
 		int tag = Integer.parseInt(getInfo(received));
 		boolean accept = Boolean.parseBoolean(getMessage(received));
+		user.deleteContact(tag);
+		if (accept) {
+			Contact contact = searchUser(tag);
+			user.addToFriends(contact);
+		}
 	}
 
 	private void friendRemoved(String received) {
 		int tag = Integer.parseInt(getInfo(received));
+		user.deleteContact(tag);
 	}
 
 	private void promotedToGroupLeader(String received) {
 		int groupTag = Integer.parseInt(getInfo(received));
+		Group group = user.getGroup(groupTag);
+		if (group == null) {
+			System.err.println("You have been promoted to a group that you are not in! #BlameBene");
+			return;
+		}
+		group.setAdmin(user.getSelf());
 	}
 
 	private void invitedToGroup(String received) {
 		int groupTag = Integer.parseInt(getInfo(received));
 		String groupName = getMessage(received);
+		user.deleteGroup(groupTag);
+		Group group = new Group(groupTag, groupName);
+		group.setGroupName(groupName);
+		user.addGroup(group);
 		updateGroupMembers(read());
 	}
 
 	private void friendListReceived(String received) {
 		String[] friends = getMessage(received).split(",");
-		int[] tags = new int[friends.length];
 		for (int i = 0; i < friends.length; i++) {
-			tags[i] = Integer.parseInt(friends[i]);
+			int tag = Integer.parseInt(friends[i]);
+			Contact contact = user.getContact(tag);
+			user.deleteContact(tag);
+			if (contact == null) {
+				contact = new Contact(tag);
+				if (!isLoggedIn)
+					contact = searchUser(tag);
+			}
+			user.addToFriends(contact);
 		}
 	}
 
 	private void pendingListReceived(String received) {
 		String[] friends = getMessage(received).split(",");
-		int[] tags = new int[friends.length];
 		for (int i = 0; i < friends.length; i++) {
-			tags[i] = Integer.parseInt(friends[i]);
+			int tag = Integer.parseInt(friends[i]);
+			Contact contact = user.getContact(tag);
+			user.deleteContact(tag);
+			if (contact == null) {
+				contact = new Contact(tag);
+				if (!isLoggedIn)
+					contact = searchUser(tag);
+			}
+			user.addToPending(contact);
 		}
 	}
 
 	private void requestListReceived(String received) {
 		String[] friends = getMessage(received).split(",");
-		int[] tags = new int[friends.length];
 		for (int i = 0; i < friends.length; i++) {
-			tags[i] = Integer.parseInt(friends[i]);
+			int tag = Integer.parseInt(friends[i]);
+			Contact contact = user.getContact(tag);
+			user.deleteContact(tag);
+			if (contact == null) {
+				contact = new Contact(tag);
+				if (!isLoggedIn)
+					contact = searchUser(tag);
+			}
+			user.addToRequested(contact);
 		}
 	}
 
 	private void groupListReceived(String received) {
 		String[] groups = getMessage(received).split(",");
-		int[] tags = new int[groups.length];
-		for (int i = 0; i < groups.length; i++) {
-			tags[i] = Integer.parseInt(groups[i]);
-		}
+		String[] groupNames = getMessage(read()).split(",");
+		for (int i = 0; i < groups.length; i++)
+			user.addGroup(new Group(Integer.parseInt(groups[i]), groupNames[i]));
 	}
 
 	private void friendRequestReceived(String received) {
 		int tag = Integer.parseInt(getInfo(received));
 		String username = getMessage(received);
+		Contact contact = user.getContact(tag);
+		user.deleteContact(tag);
+		if (contact == null) {
+			contact = searchUser(tag);
+		}
+		user.addToRequested(contact);
 	}
 
 	private void messageReceived(String received) {
