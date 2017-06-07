@@ -200,6 +200,7 @@ public class Client implements Runnable{
 			write("SF",tag+"","");
 			String response = read();
 			Contact contact = null;
+			String color = getInfo(response);
 			if (getHeader(response).equals("OK"))
 				contact = new Contact(getMessage(response), tag);
 			return contact;

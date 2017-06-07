@@ -335,6 +335,7 @@ public class Client implements Runnable {
 		} else {
 			int tag = Integer.parseInt(getInfo(received));
 		}
+		//TODO find friends
 		if (response.equals("")) {
 			write("NO", "", "");
 		} else {
@@ -351,6 +352,7 @@ public class Client implements Runnable {
 	private void friendRequestReplied(String received) {
 		int tag = Integer.parseInt(getInfo(received));
 		boolean accept = Boolean.parseBoolean(getMessage(received));
+		//TODO benni
 	}
 
 	private void friendRemoved(String received) {
@@ -377,6 +379,7 @@ public class Client implements Runnable {
 	private void promoteGroupLeader(String received) {
 		int groupTag = Integer.parseInt(getInfo(received));
 		int userTag = Integer.parseInt(getMessage(received));
+
 	}
 
 	private void kickGroupMember(String received) {
