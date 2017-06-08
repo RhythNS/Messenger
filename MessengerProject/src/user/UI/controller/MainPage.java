@@ -65,6 +65,13 @@ public class MainPage {
         AnchorPane.setTopAnchor(hBox,40.0);
     }
 
+    public void clearLists() {
+        friends.getChildren().removeAll(friends.getChildren());
+        pending.getChildren().removeAll(pending.getChildren());
+        request.getChildren().removeAll(request.getChildren());
+        groups.getChildren().removeAll(groups.getChildren());
+    }
+
     public void removeContent() {
         root.getChildren().remove(content);
     }

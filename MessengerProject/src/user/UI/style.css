@@ -1,3 +1,11 @@
 .wrong{
-    -fx-background-color: #e35a5e
+    -fx-background-color: #e35a5e;
+}
+
+.error{
+    -fx-text-fill: #b00000;
+}
+
+.success{
+    -fx-text-fill: #36c000;
 }

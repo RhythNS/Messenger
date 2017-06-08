@@ -193,6 +193,16 @@ public class User {
 		client.sendFriendRequest(tag);
 	}
 
+	public void sendFriendRequest(Contact contact) {
+		removeUnsortedGroupMembers(contact);
+		addToPending(contact);
+		client.sendFriendRequest(contact.getTag());
+	}
+
+	public Contact findFriend(String username) {
+		return client.searchUser(username);
+	}
+
 	public void answerFriendRequest(Contact contact, boolean accepted) {
 		removePending(contact);
 		if (accepted) {
@@ -346,16 +356,16 @@ public class User {
 	void addToFriends(Contact contact) {
 		if (contact != null)
 			if (!friendList.contains(contact)) {
-				uiComm.changedList();
 				friendList.add(contact);
+				uiComm.changedList();
 			}
 	}
 
 	void addToPending(Contact contact) {
 		if (contact != null)
 			if (!pendingFriends.contains(contact)) {
-				uiComm.changedList();
 				pendingFriends.add(contact);
+				uiComm.changedList();
 			}
 	}
 

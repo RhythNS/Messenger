@@ -4,10 +4,15 @@
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 
-
-<HBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" spacing="20.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="user.UI.controller.addFriend">
+<HBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" spacing="20.0" stylesheets="@../style.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="user.UI.controller.addFriend">
    <children>
-      <TextField fx:id="username" promptText="username" />
+      <VBox alignment="CENTER">
+         <children>
+            <Pane prefHeight="30.0" />
+            <TextField fx:id="username" promptText="username" />
+            <Label fx:id="success" prefHeight="30.0" />
+         </children>
+      </VBox>
       <Button mnemonicParsing="false" onAction="#add" text="add" />
    </children>
 </HBox>

@@ -1,9 +1,6 @@
 package server;
 
-import dataManagement.ColorTransfer;
-import dataManagement.DateCalc;
-import dataManagement.DeviceLogin;
-import dataManagement.GroupTransfer;
+import dataManagement.*;
 import socketio.ServerSocket;
 import socketio.Socket;
 
@@ -260,7 +257,7 @@ public class Client implements Runnable {
 								case "SU":
 									searchUser(received);
 									break;
-								case "SFR":
+								case "FR":
 									friendshipRequested(received);
 									break;
 								case "RFR":
@@ -356,18 +353,23 @@ public class Client implements Runnable {
 	}
 
 	private void searchUser(String received) {
+		UserInfo userInfo;
 		String response = "";
 		String color = "";
 		if (getInfo(received).equals("")) {
 			String username = getMessage(received);
+			userInfo = account.searchUser(username);
+			if (userInfo != null) response = userInfo.getTag() + "";
 		} else {
 			int tag = Integer.parseInt(getInfo(received));
+			userInfo = account.searchUser(tag);
+			if (userInfo != null) response = userInfo.getUsername();
 		}
-
-		if (response.equals("")) {
+		if (userInfo == null) {
 			write("NO", "", "");
 		} else {
-			write("OK",color,response);
+			color = userInfo.getColor();
+			write("OK",color, response);
 		}
 
 	}

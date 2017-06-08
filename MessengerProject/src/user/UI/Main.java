@@ -29,6 +29,10 @@ public class Main extends Application {
         stage.setScene(new Scene(root, 800, 600));
     }
 
+    public static void setTitle(String title) {
+        stage.setTitle(title);
+    }
+
     public static void main(String[] args) {
         launch(args);
     }
