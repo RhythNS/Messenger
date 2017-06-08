@@ -39,8 +39,12 @@ public class UiHandler {
         mainPage.setChat(chat);
     }
 
+    public void changedList() {
+
+    }
+
     public boolean logIn(String username,String password) throws IOException {
-        user = new User(username);
+        user = new User();
         boolean login = user.login(username, password);
         if (!login)
             user = null;
@@ -48,7 +52,7 @@ public class UiHandler {
     }
 
     public boolean register(String username, String password, String color) throws IOException {
-        user = new User(username);
+        user = new User();
         boolean register = user.register(username, password, color);
         if (!register)
             user = null;
@@ -61,7 +65,7 @@ public class UiHandler {
 
     public void loadChatlist() throws IOException {
         ArrayList<Contact> contacts = user.getFriendlist();
-        ArrayList<Contact> pendings = user.getPendingFriendrequest();
+        ArrayList<Contact> pendings = user.getPendingFriends();
         ArrayList<Contact> requests = user.getRequestedFriends();
         ArrayList<Group> groups = user.getGroups();
         for (Contact c : contacts) {
@@ -96,5 +100,12 @@ public class UiHandler {
 
     public void setMainPage(MainPage mainPage) {
         this.mainPage = mainPage;
+    }
+
+    public void disconnect() {
+        if (user != null) {
+            user.disconnect();
+        }
+        System.exit(0);
     }
 }

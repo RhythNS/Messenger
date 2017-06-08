@@ -11,6 +11,7 @@ import socketio.Socket;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Server {
 
@@ -215,6 +216,7 @@ public class Server {
 	Mailbox requestMessage(Account sender, String date) {
 
 		Mailbox returnBox =dataMangement.getMessages(sender.getTag(),date);
+		if(returnBox == null) return null;
 		for (int i = 0; i < returnBox.messageSize(); i++) {
 			Message tm = returnBox.getMessage(i);
 			tm.setContent(Decrypter.decryptSynchronToString(tm.getContent(),secretKey));
@@ -353,5 +355,14 @@ public class Server {
 			}
 		}
 		return true;
+	}
+
+	public static void main(String[] args) {
+		Scanner scan = new Scanner(System.in);
+		System.out.print("What is the password: ");
+		String password = scan.nextLine();
+		System.out.print("Is it your first time loggin in (y/n): ");
+		String bool = scan.nextLine();
+		new Server(password.toCharArray(), 25565, bool.equalsIgnoreCase("y"));
 	}
 }

@@ -30,8 +30,9 @@ public class Register {
     }
 
     public void confirm() throws IOException {
-        boolean login = uiHandler.logIn(username.getText(), password.getText());
-        if (login) {
+
+        boolean register = uiHandler.register(username.getText(), password.getText(), Integer.toHexString(colorPicker.getValue().hashCode()).substring(0,6));
+        if (register) {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("../pages/mainPage.fxml"));
             Parent root = loader.load();
             Main.switchScene(root);

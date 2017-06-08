@@ -44,6 +44,7 @@ public class Client implements Runnable {
 		String[] usernamePassword = getMessage(login).split(",");
 		if (getHeader(login).equals("REG")) {
 			account = server.registerUser(usernamePassword[0],usernamePassword[1],getInfo(login));
+			System.out.println("new user has registered");
 		}else {
 			account = server.loginAccount(usernamePassword[0],usernamePassword[1]);
 			deviceNr = Integer.parseInt(getInfo(login));
@@ -94,7 +95,7 @@ public class Client implements Runnable {
 		try {
 			socket.write(header+"/"+info+"/"+message+"\n");
 		} catch (IOException e) {
-			e.printStackTrace();
+			disconnected(true);
 		}
 	}
 
@@ -289,7 +290,7 @@ public class Client implements Runnable {
 									write("PONG", "", "");
 									break;
 								case "D":
-
+									disconnected(false);
 								default:
 									break;
 							}
@@ -321,6 +322,7 @@ public class Client implements Runnable {
 			e.printStackTrace();
 		}
 		account.disconnect(this, this.deviceNr, timeout);
+		System.out.println("disconnected");
 	}
 
 	private void messageReceived(String received) {

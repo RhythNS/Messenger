@@ -30,6 +30,7 @@ public class KeyStoreSynchron {
 
     public boolean loadKeyStore(char[] password, boolean firsttime){
         try {
+
             keyStore = KeyStore.getInstance("JCEKS");
             if(firsttime){
                 keyStore.load(null,password);

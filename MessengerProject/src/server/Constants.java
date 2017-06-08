@@ -3,8 +3,8 @@ package server;
 public class Constants {
 
 	public static final int MAX_GROUP_NAME = 32;
-	public static final int MAX_USERNAME_SIZE = 32;
-	public static final int MAX_PASSWORD_SIZE = 50;
+	public static final int MAX_USERNAME_SIZE = 100;
+	public static final int MAX_PASSWORD_SIZE = 100;
 	public static final int MAX_DEVICES = 50;
 	public static final int MAX_FRIENDS = 256;
 	public static final int MAX_GROUP_MEMBERS = 256;

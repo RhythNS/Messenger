@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import user.Message;
+
 public class MessageIO {
 
 	private RandomAccessFile raf;
@@ -66,14 +68,14 @@ public class MessageIO {
 
 	Message read(Message msg) {
 		try {
-			raf.seek(msg.pointerFrom);
+			raf.seek(msg.getPointerFrom());
 		} catch (IOException e) {
 			System.err.println("Could not seek! #BlameBene");
 			e.printStackTrace();
 			return null;
 		}
 		StringBuilder sb = new StringBuilder();
-		for (long i = msg.pointerFrom; i < msg.pointerTo + 1; i++) {
+		for (long i = msg.getPointerFrom(); i < msg.getPointerTo() + 1; i++) {
 			try {
 				sb.append((char) raf.read());
 			} catch (IOException e) {
@@ -82,7 +84,7 @@ public class MessageIO {
 				return null;
 			}
 		}
-		msg.setContent(sb.toString());
+		msg.setMessageContent(sb.toString());
 		return msg;
 	}
 

@@ -3,7 +3,6 @@ package user;
 import socketio.Socket;
 import userDataManagement.DateCalc;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.PublicKey;
 
@@ -35,8 +34,8 @@ public class Client implements Runnable {
 		// TODO Generate public and private Key
 
 		PublicKey userPublicKey = null;
-		write("KEY", "", userPublicKey.toString());
-		String synchronisedKey = getMessage(socket.readLine());
+		//write("KEY", "", userPublicKey.toString());
+		//String synchronisedKey = getMessage(socket.readLine());
 		// TODO: decode Key
 		// TODO: generate synchronised Key
 
@@ -86,6 +85,7 @@ public class Client implements Runnable {
 
 	public void disconnect() {
 		write("D", "", "");
+		connected = false;
 		try {
 			socket.close();
 		} catch (IOException e) {
@@ -575,10 +575,4 @@ public class Client implements Runnable {
 		DateCalc.setOfSet(getMessage(received));
 	}
 
-	public static void main(String[] args) throws IOException {
-		User user = new User("Horst");
-		Client client = new Client("localhost", 1234, user);
-		client.login("Horst", "password", 5);
-		client.writeMessage(1234, "lol");
-	}
 }

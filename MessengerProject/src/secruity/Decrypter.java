@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.*;
 
-import static user.KeyConverter.*;
-
 public class Decrypter {
 
 

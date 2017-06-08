@@ -4,11 +4,9 @@ import java.util.ArrayList;
 
 public class Mailbox {
 
-	ArrayList<Message> messages;
-	ArrayList<Message> files;
-	public ArrayList<Integer> friends;
-	public ArrayList<Integer> requests;
-	public ArrayList<Integer> pending;
+	public ArrayList<Message> messages;
+	public ArrayList<Message> files;
+	public ArrayList<Integer> friends, requests, pending;
 	public ArrayList<ColorTransfer> colors;
 	public ArrayList<GroupTransfer> groupTransfers;
 

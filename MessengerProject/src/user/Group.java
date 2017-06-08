@@ -1,6 +1,9 @@
 package user;
 
 import java.util.ArrayList;
+import java.util.Date;
+
+import dataManagement.DateCalc;
 
 public class Group {
 
@@ -50,6 +53,10 @@ public class Group {
 		this.admin = groupList.get(0);
 	}
 
+	public boolean contains(Contact contact) {
+		return groupList.contains(contact);
+	}
+
 	public boolean kickUser(int tag) {
 		for (Contact c : groupList)
 			if (c.getTag() == tag)
@@ -61,6 +68,21 @@ public class Group {
 		if (!groupList.contains(contact))
 			return groupList.add(contact);
 		return true;
+	}
+
+	public int getDayNr(Date d) {
+		String reqDay = DateCalc.getForYear().format(d);
+		for (int i = 0; i < chats.size(); i++)
+			if (reqDay.equals(DateCalc.getForYear().format(chats.get(i).getDate())))
+				return i;
+		return -1;
+	}
+
+	public void leave() {
+		groupName = null;
+		groupList = null;
+		chats = null;
+		admin = null;
 	}
 
 }

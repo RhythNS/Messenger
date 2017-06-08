@@ -127,7 +127,8 @@ public class DataManagement {
 			if (username != null && password != null && username.length() < Constants.MAX_USERNAME_SIZE + 1
 					&& password.length() < Constants.MAX_PASSWORD_SIZE + 1 && color != null) {
 				if (usersTree.getTag(username) == -1) {
-					int tag = usersArgument.add(username, password, color);
+					int temp = Integer.parseInt(color, 16);
+					int tag = usersArgument.add(username, password, Integer.toString(temp, Character.MAX_RADIX));
 					usersTree.add(tag, username);
 					friendList.make(tag);
 					synchronized (userGroupLock) {

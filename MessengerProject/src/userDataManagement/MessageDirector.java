@@ -3,6 +3,8 @@ package userDataManagement;
 import java.io.File;
 import java.util.ArrayList;
 
+import user.Message;
+
 public class MessageDirector {
 	private Index[] indexList;
 	int pointer;

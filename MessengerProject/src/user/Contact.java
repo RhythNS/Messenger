@@ -1,6 +1,9 @@
 package user;
 
 import java.util.ArrayList;
+import java.util.Date;
+
+import dataManagement.DateCalc;
 
 public class Contact {
 
@@ -42,5 +45,13 @@ public class Contact {
 
 	public ArrayList<Chat> getChats() {
 		return chats;
+	}
+
+	public int getDayNr(Date d) {
+		String reqDay = DateCalc.getForYear().format(d);
+		for (int i = 0; i < chats.size(); i++)
+			if (reqDay.equals(DateCalc.getForYear().format(chats.get(i).getDate())))
+				return i;
+		return -1;
 	}
 }

@@ -21,7 +21,7 @@ public class Main extends Application {
         primaryStage.setScene(new Scene(root, 800, 600));
         primaryStage.show();
         primaryStage.setOnCloseRequest((WindowEvent event) -> {
-
+            UiHandler.getInstance().disconnect();
         });
     }
 

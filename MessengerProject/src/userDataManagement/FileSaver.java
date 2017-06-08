@@ -12,14 +12,15 @@ public class FileSaver {
 		toSaveDir = f;
 	}
 
-	public boolean write(int fromTag, int toTag, String name, byte[] data) {
+	public String write(int fromTag, int toTag, String name, byte[] data) {
 		FileOutputStream fos;
+		File f = new File(toSaveDir, name);
 		try {
-			fos = new FileOutputStream(new File(toSaveDir, name));
+			fos = new FileOutputStream(f);
 		} catch (IOException e) {
 			System.err.println("Could not init buffererdWriter! #BlameBene");
 			e.printStackTrace();
-			return false;
+			return null;
 		}
 		try {
 			fos.write(data);
@@ -32,7 +33,7 @@ public class FileSaver {
 				System.err.println("Could not close the Fos! #BlameBene");
 				e1.printStackTrace();
 			}
-			return false;
+			return null;
 		}
 		try {
 			fos.close();
@@ -40,7 +41,7 @@ public class FileSaver {
 			System.err.println("Could not close the Fos! #BlameBene");
 			e.printStackTrace();
 		}
-		return false;
+		return f.getAbsolutePath();
 	}
 
 }

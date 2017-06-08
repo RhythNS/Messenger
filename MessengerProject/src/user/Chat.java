@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 
+import dataManagement.DateCalc;
+
 public class Chat implements Comparable<Chat> {
 
 	private Date date;
@@ -24,6 +26,12 @@ public class Chat implements Comparable<Chat> {
 		return date;
 	}
 
+	public String getFormattedDay() {
+		if (date != null)
+			DateCalc.getForYear().format(date);
+		return null;
+	}
+
 	/**
 	 * New messages are at the front
 	 */
@@ -39,7 +47,6 @@ public class Chat implements Comparable<Chat> {
 	public int compareTo(Chat o) {
 		return -this.date.compareTo(o.date);
 	}
-
 
 
 }

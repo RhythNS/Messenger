@@ -8,32 +8,35 @@ import java.util.Date;
 
 public class DateCalc {
 
-	private static SimpleDateFormat forDay = new SimpleDateFormat("HHmmss"), forYear = new SimpleDateFormat("yyyyMMdd");
+	private static SimpleDateFormat forDay = new SimpleDateFormat("HHmmss"), forYear = new SimpleDateFormat("yyyyMMdd"),
+			wholeYear = new SimpleDateFormat("yyyyMMddHHmmss");
 	private static final Object calendarLock = new Object();
+	private static long miliOffset;
 
 	public static void setOfSet(String date) {
-		synchronized (calendarLock) {
-			SimpleDateFormat wholeYear = new SimpleDateFormat("yyyyMMddHHmmss");
-			Date serverDate = null;
-			try {
-				serverDate = wholeYear.parse(date);
-			} catch (ParseException e) {
-				System.err.println(" #BlameBene");
-				e.printStackTrace();
-			}
-			Calendar cal = Calendar.getInstance();
-			cal.setTime(serverDate);
-			cal.getTimeZone();
+		SimpleDateFormat wholeYear = new SimpleDateFormat("yyyyMMddHHmmss");
+		Date serverDate = null;
+		try {
+			serverDate = wholeYear.parse(date);
+		} catch (ParseException e) {
+			System.err.println("Could not parse! As a result all messages will be displayed wrong! #BlameBene");
+			e.printStackTrace();
 		}
+		miliOffset = new Date().getTime() - serverDate.getTime();
 	}
 
 	public static String getForYearDate() {
 		return forYear.format(new Date());
 	}
 
-	public static String getTime(){
-		return null;
+	public static Date getTime() {
+		return new Date(new Date().getTime() - miliOffset);
 	}
+
+	public static SimpleDateFormat getWholeYear() {
+		return wholeYear;
+	}
+
 	public synchronized static String getNextDay(String currentDay) {
 		synchronized (calendarLock) {
 			Calendar cal = Calendar.getInstance();
@@ -88,17 +91,10 @@ public class DateCalc {
 	}
 
 	public static void main(String[] args) {
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(new Date());
+		String date = "20170607181125";
 		SimpleDateFormat wholeYear = new SimpleDateFormat("yyyyMMddHHmmss");
-		System.out.println(wholeYear.format(cal.getTime()));
-		try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		System.out.println(wholeYear.format(cal.getTime()));
+		DateCalc.setOfSet(date);
+		System.out.println(wholeYear.format(DateCalc.getTime()));
 	}
 
 }
