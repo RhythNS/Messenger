@@ -19,8 +19,8 @@ public class Client implements Runnable {
 
 	public Client(Socket socket, Server server) throws IOException {
 		this.socket = socket;
-		authentication(server);
 		deviceNr = -1;
+		authentication(server);
 	}
 
 	private void authentication(Server server) throws IOException {
@@ -53,6 +53,7 @@ public class Client implements Runnable {
 			//TODO verändert bitte prüfen
 			DeviceLogin deviceLogin = server.diviceLogin(account.getTag(),deviceNr);		//
 			write("OK",deviceLogin.NUMBER+"",account.getTag()+"");		//
+			this.deviceNr = deviceLogin.NUMBER;
 			connected = true;
 			Thread t = new Thread(this);
 			t.start();

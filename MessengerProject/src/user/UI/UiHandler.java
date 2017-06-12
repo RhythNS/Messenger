@@ -61,6 +61,7 @@ public class UiHandler {
 
     public boolean register(String username, String password, String color) throws IOException {
         u = new User();
+        System.out.println(color);
         boolean register = u.register(username, password, color);
         if (!register)
             u = null;
@@ -83,7 +84,7 @@ public class UiHandler {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("pages/contact.fxml"));
             Parent friend = loader.load();
             user.UI.controller.Contact contact = loader.getController();
-            contact.setContact(c, user.UI.controller.Contact.Type.FRINED);
+            contact.setContact(c, user.UI.controller.Contact.Type.FRIEND);
             mainPage.addFriend(friend);
         }
         for (Contact c: pendings) {

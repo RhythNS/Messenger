@@ -67,7 +67,7 @@ public class DataManagement {
 		groupDir.mkdirs();
 
 		usersArgument = new ArgumentRandomAccessFile(new File(userDir, "arguments.txt"), Constants.MAX_USERNAME_SIZE,
-				Constants.MAX_PASSWORD_SIZE, 5);
+				Constants.MAX_PASSWORD_SIZE, 10);
 		usersTree = new BinaryTreeFile(new File(userDir, "binaryTree.txt"), Constants.MAX_USERNAME_SIZE);
 		friendList = new FriendList(new File(userDir, "friendlist.txt"));
 		usersGroupList = new FriendList(new File(userDir, "grouplist.txt"));
@@ -127,10 +127,11 @@ public class DataManagement {
 			if (username != null && password != null && username.length() < Constants.MAX_USERNAME_SIZE + 1
 					&& password.length() < Constants.MAX_PASSWORD_SIZE + 1 && color != null) {
 				if (usersTree.getTag(username) == -1) {
-					int temp = Integer.parseInt(color, 16);
-					int tag = usersArgument.add(username, password, Integer.toString(temp, Character.MAX_RADIX));
+					int tag = usersArgument.add(username, password, color);
 					usersTree.add(tag, username);
 					friendList.make(tag);
+					requestList.make(tag);
+					pendingList.make(tag);
 					synchronized (userGroupLock) {
 						usersGroupList.make(tag);
 					}
@@ -140,6 +141,7 @@ public class DataManagement {
 			return 0;
 		}
 	}
+
 
 	/**
 	 * Tries to login a user. If succeeded true is returned. If failed false is

@@ -30,7 +30,7 @@ public class Contact {
             selected = true;
             root.getStyleClass().add("selected");
             switch (type) {
-                case FRINED:
+                case FRIEND:
                     UiHandler.getInstance().setChat(contact.getTag());
                     UiHandler.getInstance().getMainPage().setSelected(root, this);
                     break;
@@ -71,7 +71,7 @@ public class Contact {
     }
 
     public enum  Type{
-        FRINED,PENDING, REQUEST
+        FRIEND,PENDING, REQUEST
     }
 
 }

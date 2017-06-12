@@ -175,7 +175,7 @@ public class ListFiles {
 
 	int getFirstNull(int tag) {
 		try {
-			for (int i = 0; i < raf.length() / AMOUNT_OF_VALUES; i++) {
+			for (int i = 0; i < raf.length() / BYTES_PER_USER; i++) {
                 try {
                     raf.seek((tag - 1) * BYTES_PER_USER + i * BYTES_PER_VALUE);
                 } catch (IOException e) {
