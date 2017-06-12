@@ -18,9 +18,10 @@ public class UiHandler {
     private MainPage mainPage;
     private Main main;
     private static UiHandler instance;
-    private User user;
+    private User u;
     private Client client;
     private boolean login;
+
 
     private UiHandler() {
         login = true;
@@ -36,7 +37,7 @@ public class UiHandler {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("pages/mainPage.fxml"));
         Parent root = loader.load();
         Chat chat = loader.getController();
-        mainPage.setChat(chat);
+        mainPage.setContent(chat.root);
     }
 
     public void changedList() {
@@ -49,20 +50,20 @@ public class UiHandler {
     }
 
     public boolean logIn(String username,String password) throws IOException {
-        user = new User();
-        boolean login = user.login(username, password);
+        u = new User();
+        boolean login = u.login(username, password);
         if (!login)
-            user = null;
+            u = null;
         else
             Main.setTitle(username);
         return login;
     }
 
     public boolean register(String username, String password, String color) throws IOException {
-        user = new User();
-        boolean register = user.register(username, password, color);
+        u = new User();
+        boolean register = u.register(username, password, color);
         if (!register)
-            user = null;
+            u = null;
         else
             Main.setTitle(username);
         return register;
@@ -73,30 +74,30 @@ public class UiHandler {
     }
 
     public void loadChatlist() throws IOException {
-        ArrayList<Contact> contacts = user.getFriendlist();
-        ArrayList<Contact> pendings = user.getPendingFriends();
-        ArrayList<Contact> requests = user.getRequestedFriends();
-        ArrayList<Group> groups = user.getGroups();
+        ArrayList<Contact> contacts = u.getFriendlist();
+        ArrayList<Contact> pendings = u.getPendingFriends();
+        ArrayList<Contact> requests = u.getRequestedFriends();
+        ArrayList<Group> groups = u.getGroups();
         mainPage.clearLists();
         for (Contact c : contacts) {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("pages/contact.fxml"));
             Parent friend = loader.load();
             user.UI.controller.Contact contact = loader.getController();
-            contact.setContact(c);
+            contact.setContact(c, user.UI.controller.Contact.Type.FRINED);
             mainPage.addFriend(friend);
         }
         for (Contact c: pendings) {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("pages/contact.fxml"));
             Parent pending = loader.load();
             user.UI.controller.Contact contact = loader.getController();
-            contact.setContact(c);
+            contact.setContact(c, user.UI.controller.Contact.Type.PENDING);
             mainPage.addPending(pending);
         }
         for (Contact c: requests) {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("pages/contact.fxml"));
             Parent request = loader.load();
             user.UI.controller.Contact contact = loader.getController();
-            contact.setContact(c);
+            contact.setContact(c, user.UI.controller.Contact.Type.REQUEST);
             mainPage.addRequest(request);
         }
         for (Group g:groups) {
@@ -113,18 +114,26 @@ public class UiHandler {
     }
 
     public boolean addFriend(String username) {
-        Contact c = user.findFriend(username);
+        Contact c = u.findFriend(username);
         if (c != null) {
-            user.sendFriendRequest(c);
+            u.sendFriendRequest(c);
             return true;
         }
         return false;
     }
 
     public void disconnect() {
-        if (user != null) {
-            user.disconnect();
+        if (u != null) {
+            u.disconnect();
         }
         System.exit(0);
+    }
+
+    public MainPage getMainPage() {
+        return mainPage;
+    }
+
+    public void replyFriendRequest(Contact contact, boolean accept) {
+
     }
 }

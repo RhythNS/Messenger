@@ -56,8 +56,8 @@ public class Client implements Runnable {
 			connected = true;
 			Thread t = new Thread(this);
 			t.start();
-			account.requestMessage(this,deviceLogin.DATE);
 			sendTime(DateCalc.getDeviceDate());
+			account.requestMessage(this,deviceLogin.DATE);
 		} else {
 			write("NO", "", "");
 		}
@@ -105,6 +105,7 @@ public class Client implements Runnable {
 		}
 		write("INFO", bytes.length + "", checksum + "");
 		socket.getOutputStream().write(bytes);
+		socket.write(bytes, bytes.length);
 		if (getHeader(read()).equals("OK"))
 			return true;
 		else
@@ -281,8 +282,6 @@ public class Client implements Runnable {
 								case "LG":
 									leftGroup(received);
 									break;
-								case "PONG":
-									break;
 								case "PING":
 									write("PONG", "", "");
 									break;
@@ -376,7 +375,7 @@ public class Client implements Runnable {
 
 	private void friendshipRequested(String received) {
 		int tag = Integer.parseInt(getInfo(received));
-		account.addToFriendlist(tag);
+		account.sendFriendRequest(tag);
 	}
 
 	private void friendRequestReplied(String received) {

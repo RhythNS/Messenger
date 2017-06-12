@@ -1,11 +1,11 @@
 package dataManagement;
 
+import server.Constants;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-
-import server.Constants;
 
 public class ListFiles {
 
@@ -174,22 +174,26 @@ public class ListFiles {
 	}
 
 	int getFirstNull(int tag) {
-		for (int i = 0; i < AMOUNT_OF_VALUES; i++) {
-			try {
-				raf.seek((tag - 1) * BYTES_PER_USER + i * BYTES_PER_VALUE);
-			} catch (IOException e) {
-				Logger.getInstance().log("Error LF9: Could not seek #BlameBene");
-				e.printStackTrace();
-				return -1;
-			}
-			try {
-				if (raf.read() == Constants.FILLER)
-					return i;
-			} catch (IOException e) {
-				Logger.getInstance().log("Error Lf10: Could not read! #BlameBene");
-				e.printStackTrace();
-				return -1;
-			}
+		try {
+			for (int i = 0; i < raf.length() / AMOUNT_OF_VALUES; i++) {
+                try {
+                    raf.seek((tag - 1) * BYTES_PER_USER + i * BYTES_PER_VALUE);
+                } catch (IOException e) {
+                    Logger.getInstance().log("Error LF9: Could not seek #BlameBene");
+                    e.printStackTrace();
+                    return -1;
+                }
+                try {
+                    if (raf.read() == Constants.FILLER)
+                        return i;
+                } catch (IOException e) {
+                    Logger.getInstance().log("Error Lf10: Could not read! #BlameBene");
+                    e.printStackTrace();
+                    return -1;
+                }
+            }
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 		return -1;
 	}

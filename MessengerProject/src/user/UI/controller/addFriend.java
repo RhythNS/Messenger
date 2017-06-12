@@ -4,12 +4,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import user.UI.UiHandler;
 
-public class addFriend {
+public class AddFriend {
 
     public TextField username;
     public Label success;
 
-    public addFriend() {
+    public AddFriend() {
 
     }
 

@@ -19,4 +19,12 @@ public class Group {
         this.group = group;
         name.setText(group.getGroupName());
     }
+
+    public void select() {
+
+    }
+
+    public void unselect() {
+
+    }
 }

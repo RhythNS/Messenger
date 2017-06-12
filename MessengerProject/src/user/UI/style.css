@@ -9,3 +9,7 @@
 .success{
     -fx-text-fill: #36c000;
 }
+
+.selected{
+    -fx-background-color: #add8e6;
+}

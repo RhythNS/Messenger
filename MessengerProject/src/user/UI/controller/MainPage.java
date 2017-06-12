@@ -17,19 +17,21 @@ public class MainPage {
     public VBox friends,groups,pending, request;
     public AnchorPane root;
     private Parent content;
+    private Contact selectedContact;
+    private Parent selected;
 
     public MainPage() {
         UiHandler.getInstance().setMainPage(this);
     }
 
-    public void setChat(Chat chat) {
+    public void setContent(Parent content) {
         if (content!=null)
             root.getChildren().remove(this.content);
-        AnchorPane.setBottomAnchor(chat.root, .0);
-        AnchorPane.setLeftAnchor(chat.root, 202.0);
-        AnchorPane.setRightAnchor(chat.root, .0);
-        AnchorPane.setTopAnchor(chat.root,40.0);
-        this.content = chat.root;
+        AnchorPane.setBottomAnchor(content, .0);
+        AnchorPane.setLeftAnchor(content, 202.0);
+        AnchorPane.setRightAnchor(content, .0);
+        AnchorPane.setTopAnchor(content,40.0);
+        this.content = content;
         root.getChildren().add(this.content);
     }
 
@@ -74,5 +76,26 @@ public class MainPage {
 
     public void removeContent() {
         root.getChildren().remove(content);
+    }
+
+    public Parent getSelected() {
+        return selected;
+    }
+
+    public Contact getSelectedContact() {
+        return selectedContact;
+    }
+
+    public void setSelected(Parent selected, Contact selectedContact) {
+        if (this.selectedContact!=null)
+            this.selectedContact.unselect();
+        this.selected = selected;
+        this.selectedContact = selectedContact;
+    }
+
+    public void unselect() {
+        selected = null;
+        selectedContact = null;
+        removeContent();
     }
 }

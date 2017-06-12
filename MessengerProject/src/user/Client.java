@@ -109,7 +109,7 @@ public class Client implements Runnable {
 			checksum ^= b;
 		}
 		write("DATA", bytes.length + "", checksum + "");
-		socket.getOutputStream().write(bytes);
+		socket.write(bytes, bytes.length);
 		if (getHeader(read()).equals("OK"))
 			return true;
 		else
