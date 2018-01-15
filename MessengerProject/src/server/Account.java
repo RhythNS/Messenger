@@ -21,8 +21,7 @@ public class Account {
 		this.server = server;
 	}
 
-
-	void receiveMessage(int from, String message, Client whoGotIt){
+	void receiveMessage(int from, String message, Client whoGotIt) {
 		String date = DateCalc.getMessageDate();
 
 		for (Client c : clients) {
@@ -30,159 +29,159 @@ public class Account {
 				c.writeMessage(from, tag, date, message);
 		}
 
-		server.receiveMessage(from,this,message,date);
+		server.receiveMessage(from, this, message, date);
 	}
 
 	/**
-	 * This Message sends the data first to all of your devices, then to the server
+	 * This Message sends the data first to all of your devices, then to the
+	 * server
+	 * 
 	 * @param from
 	 * @param message
 	 * @param filename
 	 * @param whoGotIt
 	 */
-	void dataReceived(int from,String filename, byte[] message, Client whoGotIt) {
+	void dataReceived(int from, String filename, byte[] message, Client whoGotIt) {
 
 		String date = DateCalc.getMessageDate();
-		for(Client c: clients){
-			if(!whoGotIt.equals(c)){
+		for (Client c : clients) {
+			if (!whoGotIt.equals(c)) {
 				try {
-					c.sendData(from, tag,date,filename,message);
+					c.sendData(from, tag, date, filename, message);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
 		}
-		server.dataReceived(from,tag,message,filename,date);
+		server.dataReceived(from, tag, message, filename, date);
 	}
 
-
-	void requestMessage(Client sender, String date){
+	void requestMessage(Client sender, String date) {
 		Mailbox mb = server.requestMessage(this, date);
 
-		if(mb == null)return;
+		if (mb == null)
+			return;
 
 		int[] friends = new int[mb.friendSize()];
 		for (int i = 0; i < mb.friendSize(); i++) {
 			friends[i] = mb.friends.get(i);
 		}
-		sender.sendFriendlist(friends);
-
-
+		if (friends.length > 0)
+			sender.sendFriendlist(friends);
 
 		int[] requests = new int[mb.requestSize()];
 		for (int i = 0; i < mb.requestSize(); i++) {
 			requests[i] = mb.requests.get(i);
 		}
-		sender.sendRequestlist(requests);
-
+		if (requests.length > 0)
+			sender.sendRequestlist(requests);
 
 		int[] pending = new int[mb.pendingSize()];
 		for (int i = 0; i < mb.pendingSize(); i++) {
 			pending[i] = mb.pending.get(i);
 		}
-		sender.sendPendinglist(pending);
+		if (pending.length > 0)
+			sender.sendPendinglist(pending);
 
-		sender.sendGrouplist(mb.groupTransfers);
+		if (mb.groupTransfers.size() > 0)
+			sender.sendGrouplist(mb.groupTransfers);
 
-		sender.updateColors(mb.colors);
-
+		if (mb.colors.size() > 0)
+			sender.updateColors(mb.colors);
 
 		for (int i = 0; i < mb.messageSize(); i++) {
 			Message tm = mb.getMessage(i);
-			sender.writeMessage(tm.getTo(),tm.getFrom(),tm.getDate(),tm.getContent());
+			sender.writeMessage(tm.getTo(), tm.getFrom(), tm.getDate(), tm.getContent());
 		}
 
 		for (int i = 0; i < mb.fileSize(); i++) {
 			Message fm = mb.getFile(i);
 			String[] split = fm.getContent().split("\n");
 			try {
-				sender.sendData(fm.getFrom(),fm.getTo(),fm.getDate(),split[0],split[1].getBytes());
+				sender.sendData(fm.getFrom(), fm.getTo(), fm.getDate(), split[0], split[1].getBytes());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 
-
 	}
 
-	void disconnect(Client client, int deviceNumber, boolean timeout){
-		if(clients.remove(client)) {
-			server.disconnectDevice(deviceNumber,this, timeout);
-			if(clients.size()== 0){
+	void disconnect(Client client, int deviceNumber, boolean timeout) {
+		if (clients.remove(client)) {
+			server.disconnectDevice(deviceNumber, this, timeout);
+			if (clients.size() == 0) {
 				isLoggedIn = false;
 				server.disconnctAccount(this);
 			}
 		}
 	}
 
-	boolean addClient(Client toAdd){
-		if(clients.size() >= Constants.MAX_DEVICES){
+	boolean addClient(Client toAdd) {
+		if (clients.size() >= Constants.MAX_DEVICES) {
 			Logger.getInstance().log("Acc002: Too many devices are logged in!");
 			return false;
 		}
-		if(clients.contains(toAdd)){
+		if (clients.contains(toAdd)) {
 			Logger.getInstance().log("Acc003: ");
 			return false;
 		}
-		if(clients.add(toAdd)){
+		if (clients.add(toAdd)) {
 			isLoggedIn = true;
 			return true;
 		}
 		return false;
 	}
 
-	UserInfo searchUser(int tag){
+	UserInfo searchUser(int tag) {
 		return searchUser(tag);
 	}
 
-	UserInfo searchUser(String username){
+	UserInfo searchUser(String username) {
 		return server.searchUser(username);
 	}
 
-	public void acceptFriend(int tag){
-		server.addFriendTo(this,tag);
+	public void acceptFriend(int tag) {
+		server.addFriendTo(this, tag);
 	}
 
-
-	boolean sendFriendRequest(int toWhomTag){
+	boolean sendFriendRequest(int toWhomTag) {
 		return server.sendFriendRequest(toWhomTag, tag);
 	}
 
-	public void declineFriendShip(int tagtoAdd){
-		server.declineFriendShip(this,tagtoAdd);
+	public void declineFriendShip(int tagtoAdd) {
+		server.declineFriendShip(this, tagtoAdd);
 	}
 
-
-	void addToFriendlist(int tagToAdd){
-		server.addFriendTo(this, tagToAdd );
+	void addToFriendlist(int tagToAdd) {
+		server.addFriendTo(this, tagToAdd);
 	}
 
-	public boolean removeFriend(int tagToRemove, Client sender){
-		boolean res = server.removeFriend(tagToRemove,tag);
-		if(res){
-			for (Client c: clients) {
-				if(!c.equals(sender))
+	public boolean removeFriend(int tagToRemove, Client sender) {
+		boolean res = server.removeFriend(tagToRemove, tag);
+		if (res) {
+			for (Client c : clients) {
+				if (!c.equals(sender))
 					c.removeFriend(tagToRemove);
 			}
 		}
 		return res;
 	}
 
-	void gotInvitedToGroup(int groupTag, String groupname, int[] member){
-		for (Client c :clients) {
-			c.groupInvite(groupTag,"",member);
+	void gotInvitedToGroup(int groupTag, String groupname, int[] member) {
+		for (Client c : clients) {
+			c.groupInvite(groupTag, "", member);
 		}
 	}
-	boolean addToGroup(int groupTag, int toAddTag){
+
+	boolean addToGroup(int groupTag, int toAddTag) {
 		return server.sendGroupInvite(groupTag, toAddTag);
 	}
 
-	void updateGroupMemberForAllClients(int grouptag, int[] memberTags){
-		for (Client c: clients) {
-			c.updateGroupMembers(grouptag,memberTags);
+	void updateGroupMemberForAllClients(int grouptag, int[] memberTags) {
+		for (Client c : clients) {
+			c.updateGroupMembers(grouptag, memberTags);
 		}
 	}
-
 
 	public String getPassword() {
 		return password;
@@ -196,19 +195,19 @@ public class Account {
 		return server.createGroup(nameOfGroup, accounts);
 	}
 
-	boolean promoteGroupMember(int grpTag, int userWhoWantsToGetAdminTag){
+	boolean promoteGroupMember(int grpTag, int userWhoWantsToGetAdminTag) {
 
-		boolean res = server.promoteGroupMember(grpTag,userWhoWantsToGetAdminTag, tag);
+		boolean res = server.promoteGroupMember(grpTag, userWhoWantsToGetAdminTag, tag);
 
-		if(!res) return false;
-		for (Client c :
-				clients) {
+		if (!res)
+			return false;
+		for (Client c : clients) {
 			c.promoteGroupLeader(grpTag);
 		}
 		return true;
 	}
 
-	boolean removeFromGroup(int groupTag, int whoGetsRemoved){
+	boolean removeFromGroup(int groupTag, int whoGetsRemoved) {
 		return server.removeFromGroup(groupTag, whoGetsRemoved, tag);
 	}
 
@@ -216,24 +215,24 @@ public class Account {
 		return tag;
 	}
 
-	int[] getFriendList(){
+	int[] getFriendList() {
 		return server.getFriendList(tag);
 	}
 
-	boolean leaveGroup(int grpTag){
-		return server.leaveGroup(tag ,grpTag);
+	boolean leaveGroup(int grpTag) {
+		return server.leaveGroup(tag, grpTag);
 	}
 
 	void sendMessage(int from, String message, String date) {
-		for (Client c :clients) {
-			c.writeMessage(from,tag,date,message);
+		for (Client c : clients) {
+			c.writeMessage(from, tag, date, message);
 		}
 	}
 
 	void sendData(int from, byte[] message, String filename, String date) {
-		for (Client c :clients) {
+		for (Client c : clients) {
 			try {
-				c.sendData(from, tag,date,filename,message);
+				c.sendData(from, tag, date, filename, message);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -242,27 +241,24 @@ public class Account {
 
 	void sendBlocked(Account accountWhoDeclines, boolean acceptOrDecline) {
 		for (Client c : clients) {
-			c.replyFriendRequest(accountWhoDeclines.getTag(),acceptOrDecline);
+			c.replyFriendRequest(accountWhoDeclines.getTag(), acceptOrDecline);
 		}
 	}
 
-
 	void gotRemovedFromGroup(int grpTag) {
-		for (Client c: clients) {
+		for (Client c : clients) {
 			c.kickGroupMember(grpTag);
 		}
 	}
 
 	void receiveFriendRequest(int fromWhomTag, String username) {
-		for (Client c :
-				clients) {
+		for (Client c : clients) {
 			c.sendFriendRequest(fromWhomTag, username);
 		}
 	}
 
 	void updateFriends(int tagFromWhichAcc) {
-		for (Client c :
-				clients) {
+		for (Client c : clients) {
 			c.removeFriend(tagFromWhichAcc);
 		}
 	}

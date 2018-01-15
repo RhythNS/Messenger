@@ -17,6 +17,7 @@ public class Mailbox {
 		requests = new ArrayList<>();
 		pending = new ArrayList<>();
 		colors = new ArrayList<>();
+		groupTransfers = new ArrayList<>();
 	}
 
 	public Message getMessage(int i) {

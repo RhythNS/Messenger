@@ -40,6 +40,7 @@ public class MainPage {
     }
 
     public void addFriend(Parent parent) {
+    	
         friends.getChildren().add(parent);
     }
 

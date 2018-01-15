@@ -320,6 +320,7 @@ public class Client implements Runnable {
 				synchronized (userLock) {
 					if (socket.dataAvailable() > 0) {
 						String received = read();
+						System.out.println(received);
 						synchronized (userLock) {
 							switch (getHeader(received)) {
 							case "MSG":
