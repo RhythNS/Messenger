@@ -1,5 +1,6 @@
 package user.UI;
 
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
@@ -108,6 +109,10 @@ public class UiHandler {
             groupController.setGroup(g);
             mainPage.addGroup(group);
         }
+        System.out.println(contacts);
+        System.out.println(pendings);
+        System.out.println(requests);
+        System.out.println(groups);
     }
 
     public void setMainPage(MainPage mainPage) {

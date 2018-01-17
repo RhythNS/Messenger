@@ -21,7 +21,7 @@ public class User {
 	private int port = 25565;
 	private Contact self;
 	private DataManagement dataManagement;
-	private UiHandler uiComm = UiHandler.getInstance();
+	//	private UiHandler uiComm = UiHandler.getInstance();
 	private Thread nextDay;
 
 	public User() {
@@ -84,6 +84,10 @@ public class User {
 		return requestedFriends;
 	}
 
+	public ArrayList<Contact> getUnsortedGroupMembers() {
+		return unsortedGroupMembers;
+	}
+
 	public ArrayList<Group> getGroups() {
 		return groups;
 	}
@@ -114,7 +118,8 @@ public class User {
 
 	public boolean login(String username, String password) {
 		try {
-			if (!client.login(username, MD5Hash.getMD5(password), dataManagement.getDeviceNr())) return false;
+			if (!client.login(username, MD5Hash.getMD5(password), dataManagement.getDeviceNr()))
+				return false;
 		} catch (IOException | NoSuchAlgorithmException e) {
 			System.err.println("IOException or NosuchAlgorithmException \\(>.<)/ #BlameBene");
 			e.printStackTrace();
@@ -275,7 +280,8 @@ public class User {
 			}
 			int where = addDay(message.date, contact);
 			contact.getChats().get(where).addMessage(message);
-			uiComm.messageReceived(otherGuy);
+			//			uiComm.messageReceived(otherGuy);
+			System.out.println(contact + ": " + message);
 		}
 	}
 
@@ -312,31 +318,32 @@ public class User {
 	}
 
 	void deleteContact(int tag) {
+		System.out.println(tag + " deleted");
 		for (int i = 0; i < friendList.size(); i++) {
 			if (friendList.get(i).getTag() == tag) {
 				friendList.get(i);
-				uiComm.changedList();
+				//				uiComm.changedList();
 				return;
 			}
 		}
 		for (int i = 0; i < pendingFriends.size(); i++) {
 			if (pendingFriends.get(i).getTag() == tag) {
 				pendingFriends.get(i);
-				uiComm.changedList();
+				//				uiComm.changedList();
 				return;
 			}
 		}
 		for (int i = 0; i < requestedFriends.size(); i++) {
 			if (requestedFriends.get(i).getTag() == tag) {
 				requestedFriends.remove(i);
-				uiComm.changedList();
+				//				uiComm.changedList();
 				return;
 			}
 		}
 		for (int i = 0; i < unsortedGroupMembers.size(); i++) {
 			if (unsortedGroupMembers.get(i).getTag() == tag) {
 				unsortedGroupMembers.remove(i);
-				uiComm.changedList();
+				//				uiComm.changedList();
 				return;
 			}
 		}
@@ -347,7 +354,8 @@ public class User {
 			if (groups.get(i).getTag() == tag) {
 				groups.get(i).leave();
 				groups.remove(i);
-				uiComm.changedList();
+				System.out.println(tag + " group deleted");
+				//				uiComm.changedList();
 				return;
 			}
 		}
@@ -357,7 +365,8 @@ public class User {
 		if (contact != null)
 			if (!friendList.contains(contact)) {
 				friendList.add(contact);
-				uiComm.changedList();
+				System.out.println(contact + " added to friends");
+				//				uiComm.changedList();
 			}
 	}
 
@@ -365,7 +374,8 @@ public class User {
 		if (contact != null)
 			if (!pendingFriends.contains(contact)) {
 				pendingFriends.add(contact);
-				uiComm.changedList();
+				System.out.println(contact + " added to pending");
+				//				uiComm.changedList();
 			}
 	}
 
@@ -373,7 +383,8 @@ public class User {
 		if (contact != null)
 			if (!requestedFriends.contains(contact)) {
 				requestedFriends.add(contact);
-				uiComm.changedList();
+				System.out.println(contact + " added to requested");
+				//				uiComm.changedList();
 			}
 	}
 
@@ -381,13 +392,15 @@ public class User {
 		if (contact != null)
 			if (!unsortedGroupMembers.contains(contact)) {
 				unsortedGroupMembers.add(contact);
-				uiComm.changedList();
+				System.out.println(contact + " added to unsorted");
+				//				uiComm.changedList();
 			}
 	}
 
 	boolean removeFriends(Contact contact) {
 		if (contact != null) {
-			uiComm.changedList();
+			System.out.println(contact + " removed from friends");
+			//			uiComm.changedList();
 			return friendList.remove(contact);
 		}
 		return true;
@@ -395,7 +408,8 @@ public class User {
 
 	boolean removeRequsted(Contact contact) {
 		if (contact != null) {
-			uiComm.changedList();
+			System.out.println(contact + " removed from requested");
+			//			uiComm.changedList();
 			return requestedFriends.remove(contact);
 		}
 		return true;
@@ -403,7 +417,8 @@ public class User {
 
 	boolean removePending(Contact contact) {
 		if (contact != null) {
-			uiComm.changedList();
+			System.out.println(contact + " removed from pending");
+			//			uiComm.changedList();
 			return pendingFriends.remove(contact);
 		}
 		return true;
@@ -420,9 +435,11 @@ public class User {
 	}
 
 	void addGroup(Group group) {
-		if (group != null)
+		if (group != null) {
 			groups.add(group);
-		uiComm.changedList();
+			System.out.println(group + " added");
+			//		uiComm.changedList();
+		}
 	}
 
 	public boolean amIAdmin(Group group) {

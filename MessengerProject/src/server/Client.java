@@ -25,25 +25,23 @@ public class Client implements Runnable {
 
 	private void authentication(Server server) throws IOException {
 		/*
-		//todo: Generate public and private key
-		PublicKey userPublicKey;
-
-		try {
-			userPublicKey = KeyConverter.generatePublicKeyFromString(getMessage(socket.readLine()));
-		} catch (IOException e) {
-			System.err.println("Could not read the Key from the server");
-		}
-		//TODO: generate and encrypt synchronised Key
-
-		write("KEY","",key.toString());
-		*/
+		 * //todo: Generate public and private key PublicKey userPublicKey;
+		 * 
+		 * try { userPublicKey =
+		 * KeyConverter.generatePublicKeyFromString(getMessage(socket.readLine()
+		 * )); } catch (IOException e) {
+		 * System.err.println("Could not read the Key from the server"); }
+		 * //TODO: generate and encrypt synchronised Key
+		 * 
+		 * write("KEY","",key.toString());
+		 */
 		String login = read();
 		String[] usernamePassword = getMessage(login).split(",");
 		if (getHeader(login).equals("REG")) {
-			account = server.registerUser(usernamePassword[0],usernamePassword[1],getInfo(login));
+			account = server.registerUser(usernamePassword[0], usernamePassword[1], getInfo(login));
 			System.out.println("new user has registered");
-		}else {
-			account = server.loginAccount(usernamePassword[0],usernamePassword[1]);
+		} else {
+			account = server.loginAccount(usernamePassword[0], usernamePassword[1]);
 			deviceNr = Integer.parseInt(getInfo(login));
 		}
 
@@ -51,18 +49,18 @@ public class Client implements Runnable {
 			account.addClient(this);
 
 			//TODO verändert bitte prüfen
-			DeviceLogin deviceLogin = server.diviceLogin(account.getTag(),deviceNr);		//
-			write("OK",deviceLogin.NUMBER+"",account.getTag()+"");		//
+			DeviceLogin deviceLogin = server.diviceLogin(account.getTag(), deviceNr); //
+			write("OK", deviceLogin.NUMBER + "", account.getTag() + ""); //
 			this.deviceNr = deviceLogin.NUMBER;
 			connected = true;
 			Thread t = new Thread(this);
 			t.start();
 			sendTime(DateCalc.getDeviceDate());
-			account.requestMessage(this,deviceLogin.DATE);
+			account.requestMessage(this, deviceLogin.DATE);
 		} else {
 			write("NO", "", "");
 		}
-		write("LOG","","");
+		write("LOG", "", "");
 
 	}
 
@@ -89,9 +87,12 @@ public class Client implements Runnable {
 	}
 
 	private void write(String header, String info, String message) {
-		//todo: Encryption
+		//TODO: Encryption + remove pring
+		String msg = header + "/" + info + "/" + message + "\n";
+		if (!(header.substring(0, 2).equals("PI") || header.substring(0, 2).equals("PO")))
+			System.out.print((account != null ? account.getTag() : "?") + " <- " + msg);
 		try {
-			socket.write(header+"/"+info+"/"+message+"\n");
+			socket.write(msg);
 		} catch (IOException e) {
 			disconnected(true);
 		}
@@ -100,8 +101,7 @@ public class Client implements Runnable {
 	private boolean send(byte[] bytes) throws IOException {
 		//todo: Encryption
 		byte checksum = 0;
-		for (byte b:bytes
-				) {
+		for (byte b : bytes) {
 			checksum ^= b;
 		}
 		write("INFO", bytes.length + "", checksum + "");
@@ -123,7 +123,8 @@ public class Client implements Runnable {
 		synchronized (userLock) {
 			if (data.length <= 1048576) {
 				write("DATA", from + "," + to + "," + date, filename);
-				while (!send(data));
+				while (!send(data))
+					;
 				write("EOT", "", "");
 				return true;
 			}
@@ -133,60 +134,60 @@ public class Client implements Runnable {
 
 	public void sendFriendlist(int[] friendList) {
 		StringBuilder stringBuilder = new StringBuilder();
-		for (int i = 0; i < friendList.length-1; i++) {
+		for (int i = 0; i < friendList.length - 1; i++) {
 			stringBuilder.append(friendList[i]).append(",");
 		}
-		stringBuilder.append(friendList[friendList.length-1]);
+		stringBuilder.append(friendList[friendList.length - 1]);
 		write("SFL", friendList.length + "", stringBuilder.toString());
 	}
 
 	public void sendPendinglist(int[] pending) {
 		StringBuilder stringBuilder = new StringBuilder();
-		for (int i = 0; i < pending.length-1; i++) {
+		for (int i = 0; i < pending.length - 1; i++) {
 			stringBuilder.append(pending[i]).append(",");
 		}
-		stringBuilder.append(pending[pending.length-1]);
+		stringBuilder.append(pending[pending.length - 1]);
 		write("SPL", pending.length + "", stringBuilder.toString());
 	}
 
 	public void sendRequestlist(int[] requests) {
 		StringBuilder stringBuilder = new StringBuilder();
-		for (int i = 0; i < requests.length-1; i++) {
+		for (int i = 0; i < requests.length - 1; i++) {
 			stringBuilder.append(requests[i]).append(",");
 		}
-		stringBuilder.append(requests[requests.length-1]);
+		stringBuilder.append(requests[requests.length - 1]);
 		write("SFL", requests.length + "", stringBuilder.toString());
 	}
 
 	public void sendGrouplist(ArrayList<GroupTransfer> groupTransfers) {
 		StringBuilder stringBuilder = new StringBuilder();
-		for (int i = 0; i < groupTransfers.size()-1; i++) {
+		for (int i = 0; i < groupTransfers.size() - 1; i++) {
 			stringBuilder.append(groupTransfers.get(i).getGroupTag()).append(",");
 		}
-		stringBuilder.append(groupTransfers.get(groupTransfers.size()-1).getGroupTag());
+		stringBuilder.append(groupTransfers.get(groupTransfers.size() - 1).getGroupTag());
 		write("SGL", groupTransfers.size() + "", stringBuilder.toString());
 		stringBuilder = new StringBuilder();
-		for (int i = 0; i < groupTransfers.size()-1; i++) {
+		for (int i = 0; i < groupTransfers.size() - 1; i++) {
 			stringBuilder.append(groupTransfers.get(i).getName()).append(",");
 		}
-		stringBuilder.append(groupTransfers.get(groupTransfers.size()-1).getName());
-		write("SGL",groupTransfers.size()+"",stringBuilder.toString());
+		stringBuilder.append(groupTransfers.get(groupTransfers.size() - 1).getName());
+		write("SGL", groupTransfers.size() + "", stringBuilder.toString());
 	}
 
 	public void updateColors(ArrayList<ColorTransfer> colorTransfers) {
 		StringBuilder stringBuilder = new StringBuilder();
-		for (int i = 0; i < colorTransfers.size()-1; i++) {
+		for (int i = 0; i < colorTransfers.size() - 1; i++) {
 			stringBuilder.append(colorTransfers.get(i).getTag()).append(",");
 		}
 		stringBuilder.append(colorTransfers.get(colorTransfers.size() - 1).getTag());
-		write("UC","",stringBuilder.toString());
+		write("UC", "", stringBuilder.toString());
 		String tags = stringBuilder.toString();
 		stringBuilder = new StringBuilder();
-		for (int i = 0; i < colorTransfers.size()-1; i++) {
+		for (int i = 0; i < colorTransfers.size() - 1; i++) {
 			stringBuilder.append(colorTransfers.get(i).getColor()).append(",");
 		}
 		stringBuilder.append(colorTransfers.get(colorTransfers.size() - 1).getColor());
-		write("UC","",stringBuilder.toString());
+		write("UC", "", stringBuilder.toString());
 	}
 
 	public void sendFriendRequest(int tag, String username) {
@@ -214,14 +215,14 @@ public class Client implements Runnable {
 		write("KGM", groupTag + "", "");
 	}
 
-	public void updateGroupMembers(int tag,int[] tags) {
+	public void updateGroupMembers(int tag, int[] tags) {
 		synchronized (userLock) {
 			StringBuilder stringBuilder = new StringBuilder();
-			for (int i = 0; i < tags.length-1; i++) {
+			for (int i = 0; i < tags.length - 1; i++) {
 				stringBuilder.append(tags[i]).append(",");
 			}
 			stringBuilder.append(tags[tags.length]);
-			write("UGM",tag+"",stringBuilder.toString());
+			write("UGM", tag + "", stringBuilder.toString());
 		}
 	}
 
@@ -248,48 +249,53 @@ public class Client implements Runnable {
 				synchronized (userLock) {
 					if (socket.dataAvailable() > 0) {
 						String received = read();
+
+						// TODO REMOVE
+						System.out.println((account == null ? "?" : account.getTag()) + " -> " + received);
+
 						synchronized (userLock) {
 							switch (getHeader(received)) {
-								case "MSG":
-									messageReceived(received);
-									break;
-								case "DATA":
-									dataReceived(received);
-									break;
-								case "SU":
-									searchUser(received);
-									break;
-								case "FR":
-									friendshipRequested(received);
-									break;
-								case "RFR":
-									friendRequestReplied(received);
-									break;
-								case "RF":
-									friendRemoved(received);
-									break;
-								case "CG":
-									groupCreated(received);
-									break;
-								case "GI":
-									groupInvite(received);
-									break;
-								case "PGL":
-									promoteGroupLeader(received);
-									break;
-								case "KGM":
-									kickGroupMember(received);
-									break;
-								case "LG":
-									leftGroup(received);
-									break;
-								case "PING":
-									write("PONG", "", "");
-									break;
-								case "D":
-									disconnected(false);
-								default:
-									break;
+							case "MSG":
+								messageReceived(received);
+								break;
+							case "DATA":
+								dataReceived(received);
+								break;
+							case "SU":
+								searchUser(received);
+								break;
+							case "SF": // WAS FR
+								friendshipRequested(received);
+								break;
+							case "RFR":
+								friendRequestReplied(received);
+								break;
+							case "RF":
+								friendRemoved(received);
+								break;
+							case "CG":
+								groupCreated(received);
+								break;
+							case "GI":
+								groupInvite(received);
+								break;
+							case "PGL":
+								promoteGroupLeader(received);
+								break;
+							case "KGM":
+								kickGroupMember(received);
+								break;
+							case "LG":
+								leftGroup(received);
+								break;
+							case "PING":
+								write("PONG", "", "");
+								break;
+							case "D":
+								disconnected(false);
+							default:
+								System.out.println("I am bene and did not implement this! #BlameBene");
+								break;
 							}
 						}
 					}
@@ -306,7 +312,7 @@ public class Client implements Runnable {
 			counter++;
 			if (counter > 500) {
 				counter = 0;
-				write("PING","","");
+				write("PING", "", "");
 			}
 		}
 	}
@@ -338,14 +344,13 @@ public class Client implements Runnable {
 					e.printStackTrace();
 				}
 				//Todo: decryption
-				for (byte b : bytes
-						) {
+				for (byte b : bytes) {
 					checkSumme ^= b;
 				}
 				if (checkSumme == 0) {
-					write("OK","","");
-				}else
-					write("NOK","","");
+					write("OK", "", "");
+				} else
+					write("NOK", "", "");
 			} while (checkSumme != 0);
 			info = read();
 		} while (!getHeader(info).equals("EOT"));
@@ -359,17 +364,19 @@ public class Client implements Runnable {
 		if (getInfo(received).equals("")) {
 			String username = getMessage(received);
 			userInfo = account.searchUser(username);
-			if (userInfo != null) response = userInfo.getTag() + "";
+			if (userInfo != null)
+				response = userInfo.getTag() + "";
 		} else {
 			int tag = Integer.parseInt(getInfo(received));
 			userInfo = account.searchUser(tag);
-			if (userInfo != null) response = userInfo.getUsername();
+			if (userInfo != null)
+				response = userInfo.getUsername();
 		}
 		if (userInfo == null) {
 			write("NO", "", "");
 		} else {
 			color = userInfo.getColor();
-			write("OK",color, response);
+			write("OK", color, response);
 		}
 
 	}
@@ -430,7 +437,7 @@ public class Client implements Runnable {
 	public static void main(String[] args) throws IOException {
 		ServerSocket serverSocket = new ServerSocket(1234);
 		Socket socket = serverSocket.accept();
-		char[] password = {'a', 'A'};
+		char[] password = { 'a', 'A' };
 
 	}
 }

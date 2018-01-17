@@ -8,24 +8,24 @@ import dataManagement.DateCalc;
 public class Group {
 
 	private int tag;
-	private String groupName;
-	private ArrayList<Contact> groupList;
+	private String name;
+	private ArrayList<Contact> list;
 	private ArrayList<Chat> chats;
 	private Contact admin;
 
-	public Group(int groupTag, String groupName) {
-		this.groupName = groupName;
-		this.tag = groupTag;
-		this.groupList = new ArrayList<>();
+	public Group(int tag, String name) {
+		this.name = name;
+		this.tag = tag;
+		this.list = new ArrayList<>();
 		chats = new ArrayList<>();
 	}
 
-	public String getGroupName() {
-		return groupName;
+	public String getName() {
+		return name;
 	}
 
-	public void setGroupName(String name) {
-		this.groupName = name;
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public int getTag() {
@@ -44,29 +44,29 @@ public class Group {
 		this.admin = admin;
 	}
 
-	public ArrayList<Contact> getGroupList() {
-		return groupList;
+	public ArrayList<Contact> getList() {
+		return list;
 	}
 
-	public void setGroupList(ArrayList<Contact> groupList) {
-		this.groupList = groupList;
-		this.admin = groupList.get(0);
+	public void setList(ArrayList<Contact> list) {
+		this.list = list;
+		this.admin = list.get(0);
 	}
 
 	public boolean contains(Contact contact) {
-		return groupList.contains(contact);
+		return list.contains(contact);
 	}
 
 	public boolean kickUser(int tag) {
-		for (Contact c : groupList)
+		for (Contact c : list)
 			if (c.getTag() == tag)
-				return groupList.remove(c);
+				return list.remove(c);
 		return false;
 	}
 
 	public boolean addUser(Contact contact) {
-		if (!groupList.contains(contact))
-			return groupList.add(contact);
+		if (!list.contains(contact))
+			return list.add(contact);
 		return true;
 	}
 
@@ -79,10 +79,15 @@ public class Group {
 	}
 
 	public void leave() {
-		groupName = null;
-		groupList = null;
+		name = null;
+		list = null;
 		chats = null;
 		admin = null;
+	}
+
+	@Override
+	public String toString() {
+		return "[Group: " + name + ", " + tag + ", " + list + "]";
 	}
 
 }

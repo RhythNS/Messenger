@@ -51,7 +51,7 @@ public class MessageDirector {
 	Mailbox getMessages(int tag, String date, int groupTags[]) {
 		if (date.length() != 14) {
 			Logger.getInstance().log("Error MD0: Length of date is not right! #BlameBene");
-			return null;
+			return new Mailbox();
 		}
 		String subDate = date.substring(0, 8);
 		for (int i = 0; i < indexList.length; i++)
@@ -59,7 +59,7 @@ public class MessageDirector {
 				synchronized (indexList[i].getLock()) {
 					return indexList[i].readAll(date.substring(8, date.length()), tag, groupTags);
 				}
-		return null;
+		return new Mailbox();
 	}
 
 	boolean writeMessage(String date, int fromTag, int toTag, String message) {

@@ -21,10 +21,8 @@ public class DeviceDates extends ListFiles {
 		if (device == -1) {
 			String currentDate = DateCalc.getDeviceDate(Constants.DAYS_GET_FOR_NEW_DEVICE_LOGIN, 0, 0, 0);
 			device = getFirstNull(tag);
-			System.out.println(device);
 			if (device != -1) {
 				set(tag, device, currentDate);
-				System.out.println(tag + " " + device + " " + currentDate);
 				return new DeviceLogin(currentDate, device);
 			}
 			String[] dates = getAll(tag);

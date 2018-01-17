@@ -351,6 +351,7 @@ public class Server {
 		//TODO speichern in DataManagement?
 
 		boolean res = dataMangement.addFriend(fromWhomTag, toWhomTag);
+		System.out.println(res);
 		if (!res)
 			return false;
 		for (Account a : accounts) {

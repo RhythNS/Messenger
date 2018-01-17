@@ -54,4 +54,9 @@ public class Contact {
 				return i;
 		return -1;
 	}
+
+	@Override
+	public String toString() {
+		return "{Contact: " + username + ", " + color + ", " + tag + "}";
+	}
 }

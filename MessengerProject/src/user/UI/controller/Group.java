@@ -17,7 +17,7 @@ public class Group {
 
     public void setGroup(user.Group group) {
         this.group = group;
-        name.setText(group.getGroupName());
+        name.setText(group.getName());
     }
 
     public void select() {

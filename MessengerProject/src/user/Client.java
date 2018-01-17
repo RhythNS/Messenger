@@ -94,7 +94,7 @@ public class Client implements Runnable {
 	}
 
 	private void write(String header, String info, String message) {
-		//todo: Encryption
+		//TODO: Encryption
 		try {
 			socket.write(header + "/" + info + "/" + message + "\n");
 		} catch (IOException e) {
@@ -320,7 +320,11 @@ public class Client implements Runnable {
 				synchronized (userLock) {
 					if (socket.dataAvailable() > 0) {
 						String received = read();
-						System.out.println(received);
+
+						// TODO REMOVE
+						if (!(received.substring(0, 2).equals("PI") || received.substring(0, 2).equals("PO")))
+							System.out.println(received);
+
 						synchronized (userLock) {
 							switch (getHeader(received)) {
 							case "MSG":
@@ -472,7 +476,7 @@ public class Client implements Runnable {
 		String groupName = getMessage(received);
 		user.deleteGroup(groupTag);
 		Group group = new Group(groupTag, groupName);
-		group.setGroupName(groupName);
+		group.setName(groupName);
 		user.addGroup(group);
 		updateGroupMembers(read());
 	}

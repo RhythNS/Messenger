@@ -41,14 +41,14 @@ public class Index {
 
 	Mailbox readAll(String date, int tag, int[] groupTags) {
 		BufferedReader br = null;
+		Mailbox mb = new Mailbox();
 		try {
 			br = new BufferedReader(new FileReader(indexFile));
 		} catch (FileNotFoundException e1) {
 			Logger.getInstance().log("Error I11: Could not init the Reader! #BlameBene");
 			e1.printStackTrace();
-			return null;
+			return mb;
 		}
-		Mailbox mb = new Mailbox();
 		try {
 			String s = br.readLine();
 			String seperator = Constants.SEPERATOR + "";
@@ -90,7 +90,7 @@ public class Index {
 				Logger.getInstance().log("Error I13: Could not close the reader! #BlameBene");
 				e1.printStackTrace();
 			}
-			return null;
+			return mb;
 		}
 		try {
 			br.close();
